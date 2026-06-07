@@ -1,0 +1,220 @@
+package com.dsm.services;
+
+import com.dsm.dto.request.RequestDTO.OrderRequest;
+import com.dsm.dto.request.RequestDTO.ProductRequest;
+import com.dsm.dto.response.ResponseDTO.CustomerResponse;
+import com.dsm.dto.response.ResponseDTO.InvoiceResponse;
+import com.dsm.dto.response.ResponseDTO.OrderResponse;
+import com.dsm.dto.response.ResponseDTO.OrderSummaryResponse;
+import com.dsm.dto.response.ResponseDTO.ProductResponse;
+import com.dsm.dto.response.ResponseDTO.ShippingResponse;
+import com.dsm.entities.*;
+import com.dsm.exception.*;
+import com.dsm.repositories.*;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+@Transactional
+public class OrderService {
+    private final OrderRepository orderRepository;
+    private final ProductRepository productRepository;
+    private final ShippingRepository shippingRepository;
+    private final InvoiceRepository invoiceRepository;
+    private final CustomerService customerService;
+
+    //#region Main
+    public OrderResponse addOrder(OrderRequest request) {
+        Customer customer = customerService.findById(request.getCustomerId());
+        Order order = Order.builder()
+                .customerId(customer.getId())
+                .orderDate(LocalDateTime.now())
+                .status(Order.OrderStatus.pendingApproval)
+                .remark(request.getRemark())
+                .build();
+        order.init();
+        order = orderRepository.save(order);
+        BigDecimal total = BigDecimal.ZERO;
+
+        for (ProductRequest products : request.getProducts()) {
+            Product product = Product.builder()
+                    .orderId(order.getId())
+                    .product(products.getProduct())
+                    .productRef(products.getProductRef())
+                    .quantity(products.getQuantity())
+                    .pricePerUnit(products.getPricePerUnit())
+                    .build();
+            product.calculateSubTotal();
+            productRepository.save(product);
+            total = total.add(product.getSubTotal());
+        }
+
+        order.setTotalAmount(total);
+        return toResponse(orderRepository.save(order));
+    }
+    @Transactional(readOnly = true)
+    public OrderResponse getById(String id) {
+        return toResponse(findById(id));
+    }
+    @Transactional(readOnly = true)
+    public Page<OrderSummaryResponse> getAll(Pageable pageable) {
+        return orderRepository.findAll(pageable).map(this::toSummary);
+    }
+    @Transactional(readOnly = true)
+    public List<OrderSummaryResponse> getByClient(String customerId) {
+        return orderRepository.getOrdersByCustomerId(customerId).stream().map(this::toSummary).collect(Collectors.toList());
+    }
+    @Transactional(readOnly = true)
+    public List<OrderSummaryResponse> getByStatut(Order.OrderStatus status) {
+        return orderRepository.getOrdersByStatus(status).stream().map(this::toSummary).collect(Collectors.toList());
+    }
+    public OrderResponse validateOrder(String id) {
+        Order order = findById(id);
+
+        if (order.getStatus() != Order.OrderStatus.pendingApproval) {
+            throw new BusinessException("Only Orders Pending Approval Can Be Validated");
+        }
+
+        order.setStatus(Order.OrderStatus.validated);
+        return toResponse(orderRepository.save(order));
+    }
+    public OrderResponse updateStatut(String id, Order.OrderStatus status) {
+        Order order = findById(id);
+        order.setStatus(status);
+        return toResponse(orderRepository.save(order));
+    }
+    public OrderResponse update(String id, OrderRequest request) {
+        Order order = findById(id);
+
+        if (order.getStatus() == Order.OrderStatus.delivered || order.getStatus() == Order.OrderStatus.cancelled) {
+            throw new BusinessException("You Cannot Modify an Already Delivered Or Cancelled Order.");
+        }
+
+        Customer customer = customerService.findById(request.getCustomerId());
+        order.setCustomerId(customer.getId());
+        order.setRemark(request.getRemark());
+        productRepository.deleteProductByOrderId(id);
+        BigDecimal total = BigDecimal.ZERO;
+
+        for (ProductRequest products : request.getProducts()) {
+            Product product = Product.builder()
+                    .orderId(order.getId())
+                    .product(products.getProduct())
+                    .productRef(products.getProductRef())
+                    .quantity(products.getQuantity())
+                    .pricePerUnit(products.getPricePerUnit())
+                    .build();
+            product.calculateSubTotal();
+            productRepository.save(product);
+            total = total.add(product.getSubTotal());
+        }
+
+        order.setTotalAmount(total);
+        return toResponse(orderRepository.save(order));
+    }
+    public void deleteOrder(String id) {
+        Order order = findById(id);
+
+        if (order.getStatus() != Order.OrderStatus.pendingApproval && order.getStatus() != Order.OrderStatus.cancelled) {
+            throw new BusinessException("You May Only Remove Orders That Are Pending Approval Or Cancelled.");
+        }
+
+        productRepository.deleteProductByOrderId(id);
+        orderRepository.deleteById(id);
+    }
+
+    public Order findById(String id) {
+        return orderRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Order non trouvée: " + id));
+    }
+
+    private OrderResponse toResponse(Order order) {
+        List<Product> orderProducts = productRepository.getProductsByOrderId(order.getId());
+        List<Shipping> orderShippings = shippingRepository.getShippingsByOrderId(order.getId());
+        List<Invoice> orderInvoices = invoiceRepository.getInvoicesByOrderId(order.getId());
+        Customer customer = findCustomer(order.getCustomerId());
+        CustomerResponse customerResponse = null;
+
+        List<ProductResponse> products = orderProducts.stream().map(l -> ProductResponse.builder()
+                .id(l.getId()).product(l.getProduct())
+                .productRef(l.getProductRef())
+                .quantity(l.getQuantity())
+                .pricePerUnit(l.getPricePerUnit())
+                .subTotal(l.getSubTotal())
+                .build()).collect(Collectors.toList());
+        List<ShippingResponse> shippings = orderShippings.stream().map(shipping -> ShippingResponse.builder()
+                .id(shipping.getId())
+                .orderId(order.getId())
+                .orderNumber(order.getOrderNumber())
+                .status(shipping.getStatus())
+                .trackingNumber(shipping.getTrackingNumber())
+                .deliveryDate(shipping.getDeliveryDate())
+                .receiptDate(shipping.getReceiptDate())
+                .cost(shipping.getCost())
+                .shippingAddress(shipping.getShippingAddress())
+                .remark(shipping.getRemark())
+                .build())
+                .collect(Collectors.toList());
+        List<InvoiceResponse> invoices = orderInvoices.stream().map(invoice -> InvoiceResponse.builder()
+                .id(invoice.getId())
+                .orderId(order.getId())
+                .orderNumber(order.getOrderNumber())
+                .invoiceStatus(invoice.getStatus())
+                .invoicingMethod(invoice.getMethod())
+                .amount(invoice.getAmount())
+                .invoicingDate(invoice.getInvoicingDate())
+                .transactionRef(invoice.getTransactionRef())
+                .remark(invoice.getRemark())
+                .createdAt(invoice.getCreatedAt())
+                .build())
+                .collect(Collectors.toList());
+
+        if (customer != null) {
+            customerResponse = CustomerResponse.builder()
+                    .id(customer.getId())
+                    .name(customer.getName())
+                    .email(customer.getEmail())
+                    .phone(customer.getPhone())
+                    .build();
+        }
+
+        return OrderResponse.builder()
+                .id(order.getId()).orderNumber(order.getOrderNumber())
+                .customer(customerResponse).orderDate(order.getOrderDate())
+                .status(order.getStatus()).totalAmount(order.getTotalAmount())
+                .remark(order.getRemark()).products(products)
+                .shippings(shippings).invoices(invoices)
+                .createdAt(order.getCreatedAt()).updatedAt(order.getUpdatedAt())
+                .build();
+    }
+    private OrderSummaryResponse toSummary(Order order) {
+        Customer customer = findCustomer(order.getCustomerId());
+        return OrderSummaryResponse.builder()
+                .id(order.getId()).orderNumber(order.getOrderNumber())
+                .customerName(customer != null ? customer.getName() : "N/A")
+                .orderDate(order.getOrderDate()).status(order.getStatus())
+                .totalAmount(order.getTotalAmount())
+                .ordersCount(productRepository.getProductsByOrderId(order.getId()).size())
+                .build();
+    }
+    private Customer findCustomer(String customerId) {
+        if (customerId == null) {
+            return null;
+        }
+        try {
+            return customerService.findById(customerId);
+        } catch (ResourceNotFoundException ex) {
+            return null;
+        }
+    }
+    //#endregion Main
+
+}

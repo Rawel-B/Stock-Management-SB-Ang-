@@ -22,7 +22,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @Document(collection = "orderlines")
-public class OrderLine {
+public class Product {
     @Id
     private String id;
     @NotNull(message = "the order must be specified.")

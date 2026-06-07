@@ -4,12 +4,10 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
-
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,11 +28,11 @@ public class Order {
     @Builder.Default
     private OrderStatus status = OrderStatus.pendingApproval;
     @Builder.Default
-    private BigDecimal totalCost = BigDecimal.ZERO;
+    private BigDecimal totalAmount = BigDecimal.ZERO;
     private String orderNumber;
     private String remark;
     @Builder.Default
-    private List<OrderLine> orderLines = new ArrayList<>();
+    private List<Product> orderLines = new ArrayList<>();
     @Builder.Default
     private List<String> shippingIds = new ArrayList<>();
     @Builder.Default
