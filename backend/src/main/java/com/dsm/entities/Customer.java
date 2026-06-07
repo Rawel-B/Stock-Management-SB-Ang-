@@ -35,4 +35,13 @@ public class Customer {
     @LastModifiedDate
     private LocalDateTime updatedAt;
     //====>
+
+    @java.lang.SuppressWarnings(value = "all")
+    @lombok.Generated
+    public static class CustomerBuilder {
+
+        public Object nom(String tech_Solutions) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+    }
 }
