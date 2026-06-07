@@ -45,7 +45,7 @@ public class CustomerService {
     public List<CustomerResponse> getCustomerByName(String name) {
         return customerRepository.getCustomerByName(name).stream().map(this::toResponse).collect(Collectors.toList());
     }
-    public CustomerResponse update(String id, CustomerRequest request) {
+    public CustomerResponse updateCustomer(String id, CustomerRequest request) {
         Customer client = findById(id);
 
         if (!client.getEmail().equals(request.getEmail()) && customerRepository.checkEmailValidity(request.getEmail())) {

@@ -35,14 +35,14 @@ public class CarrierService {
         return toResponse(findById(id));
     }
     @Transactional(readOnly = true)
-    public List<CarrierResponse> getAll() {
+    public List<CarrierResponse> getAllCarriers() {
         return carrierRepository.findAll().stream().map(this::toResponse).collect(Collectors.toList());
     }
     @Transactional(readOnly = true)
     public List<CarrierResponse> getActiveCarriers() {
         return carrierRepository.getAllActiveCarriers().stream().map(this::toResponse).collect(Collectors.toList());
     }
-    public CarrierResponse update(String id, CarrierRequest request) {
+    public CarrierResponse updateCarrier(String id, CarrierRequest request) {
         Carrier carrier = findById(id);
         carrier.setName(request.getName());
         carrier.setPhone(request.getPhone());
@@ -50,7 +50,7 @@ public class CarrierService {
         if (request.getIsActive() != null) carrier.setIsActive(request.getIsActive());
         return toResponse(carrierRepository.save(carrier));
     }
-    public void delete(String id) {
+    public void deleteCarrier(String id) {
         findById(id);
         carrierRepository.deleteById(id);
     }

@@ -66,9 +66,9 @@ public class InvoiceService {
     public InvoiceResponse getInvoiceById(String id) {
         return toResponse(findById(id));
     }
-    public InvoiceResponse updateInvoiceStatus(String id, Invoice.InvoiceStatus statut) {
+    public InvoiceResponse updateInvoiceStatus(String id, Invoice.InvoiceStatus status) {
         Invoice invoice = findById(id);
-        invoice.setStatus(statut);
+        invoice.setStatus(status);
         return toResponse(invoiceRepository.save(invoice));
     }
     public void deleteInvoice(String id) {

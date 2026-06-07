@@ -50,22 +50,22 @@ public class ShippingService {
 
         return toResponse(shippingRepository.save(shipping));
     }
-    public ShippingResponse getById(String id) {
+    public ShippingResponse getShippingById(String id) {
         return toResponse(findShippingById(id));
     }
-    public List<ShippingResponse> getAll() {
+    public List<ShippingResponse> getAllShippings() {
         return shippingRepository.findAll()
                 .stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
-    public List<ShippingResponse> getByCommande(String commandeId) {
-        return shippingRepository.getShippingsByOrderId(commandeId).stream().map(this::toResponse).collect(Collectors.toList());
+    public List<ShippingResponse> getShippingsByOrder(String orderId) {
+        return shippingRepository.getShippingsByOrderId(orderId).stream().map(this::toResponse).collect(Collectors.toList());
     }
-    public List<ShippingResponse> getByStatut(Shipping.ShippingStatus status) {
+    public List<ShippingResponse> getShippingsByStatus(Shipping.ShippingStatus status) {
         return shippingRepository.getShippingsByStatus(status).stream().map(this::toResponse).collect(Collectors.toList());
     }
-    public ShippingResponse updateStatut(String id, Shipping.ShippingStatus status) {
+    public ShippingResponse updateShippingStatus(String id, Shipping.ShippingStatus status) {
         Shipping shipping = findShippingById(id);
         shipping.setStatus(status);
 
@@ -78,7 +78,7 @@ public class ShippingService {
 
         return toResponse(shippingRepository.save(shipping));
     }
-    public ShippingResponse update(String id, ShippingRequest request) {
+    public ShippingResponse updateShipping(String id, ShippingRequest request) {
         Shipping shipping = findShippingById(id);
 
         if (request.getCarrierId() != null) {
@@ -93,7 +93,7 @@ public class ShippingService {
         shipping.setRemark(request.getRemark());
         return toResponse(shippingRepository.save(shipping));
     }
-    public void delete(String id) {
+    public void deleteShipping(String id) {
         findShippingById(id);
         shippingRepository.deleteById(id);
     }

@@ -61,19 +61,19 @@ public class OrderService {
         return toResponse(orderRepository.save(order));
     }
     @Transactional(readOnly = true)
-    public OrderResponse getById(String id) {
+    public OrderResponse getOrderById(String id) {
         return toResponse(findById(id));
     }
     @Transactional(readOnly = true)
-    public Page<OrderSummaryResponse> getAll(Pageable pageable) {
+    public Page<OrderSummaryResponse> getAllOrders(Pageable pageable) {
         return orderRepository.findAll(pageable).map(this::toSummary);
     }
     @Transactional(readOnly = true)
-    public List<OrderSummaryResponse> getByClient(String customerId) {
+    public List<OrderSummaryResponse> getOrdersByCustomer(String customerId) {
         return orderRepository.getOrdersByCustomerId(customerId).stream().map(this::toSummary).collect(Collectors.toList());
     }
     @Transactional(readOnly = true)
-    public List<OrderSummaryResponse> getByStatut(Order.OrderStatus status) {
+    public List<OrderSummaryResponse> getOrderByStatus(Order.OrderStatus status) {
         return orderRepository.getOrdersByStatus(status).stream().map(this::toSummary).collect(Collectors.toList());
     }
     public OrderResponse validateOrder(String id) {
@@ -135,7 +135,16 @@ public class OrderService {
         return orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order non trouvée: " + id));
     }
-
+    private Customer findCustomer(String customerId) {
+        if (customerId == null) {
+            return null;
+        }
+        try {
+            return customerService.findById(customerId);
+        } catch (ResourceNotFoundException ex) {
+            return null;
+        }
+    }
     private OrderResponse toResponse(Order order) {
         List<Product> orderProducts = productRepository.getProductsByOrderId(order.getId());
         List<Shipping> orderShippings = shippingRepository.getShippingsByOrderId(order.getId());
@@ -204,16 +213,6 @@ public class OrderService {
                 .totalAmount(order.getTotalAmount())
                 .ordersCount(productRepository.getProductsByOrderId(order.getId()).size())
                 .build();
-    }
-    private Customer findCustomer(String customerId) {
-        if (customerId == null) {
-            return null;
-        }
-        try {
-            return customerService.findById(customerId);
-        } catch (ResourceNotFoundException ex) {
-            return null;
-        }
     }
     //#endregion Main
 
