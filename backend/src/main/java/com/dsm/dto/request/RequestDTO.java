@@ -43,6 +43,16 @@ public class RequestDTO {
         private Boolean isActive;
     }
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class SupplierRequest {
+        @NotBlank(message = "name must be filled.")
+        private String name;
+        @Email(message = "invalid email format.")
+        private String email;
+        private String phone;
+        private String address;
+        private Boolean isActive;
+    }
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class ProductRequest {
         @NotBlank(message = "the product must be specified.")
         private String product;
@@ -51,9 +61,17 @@ public class RequestDTO {
         @Positive private BigDecimal pricePerUnit;
     }
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class StockRequest {
+        @NotBlank(message = "the product must be specified.")
+        private String product;
+        private String productRef;
+        @Min(0) private Integer quantity;
+    }
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class OrderRequest {
         @NotNull(message = "the customer must be specified.")
         private String customerId;
+        private String supplierId;
         private String remark;
         @Valid
         @NotEmpty(message = "at least one product must be added.")
@@ -87,6 +105,8 @@ public class RequestDTO {
         private Double revenue;
         private long totalCustomers;
         private long totalCarriers;
+        private long totalSuppliers;
+        private long totalStocks;
         private long shippingInPerparation;
         private long invoicePending;
     }

@@ -23,6 +23,7 @@ public class ShippingService {
     private final OrderService orderService;
     private final OrderRepository orderRepository;
     private final CarrierRepository carrierRepository;
+    private final StockService stockService;
 
     public ShippingResponse addShipping(ShippingRequest request) {
         Order order = orderService.findById(request.getOrderId());
@@ -67,6 +68,7 @@ public class ShippingService {
     }
     public ShippingResponse updateShippingStatus(String id, Shipping.ShippingStatus status) {
         Shipping shipping = findShippingById(id);
+        boolean shouldReceiveStock = shipping.getStatus() != Shipping.ShippingStatus.delivered && status == Shipping.ShippingStatus.delivered;
         shipping.setStatus(status);
 
         if (status == Shipping.ShippingStatus.delivered) {
@@ -74,6 +76,9 @@ public class ShippingService {
             Order order = orderService.findById(shipping.getOrderId());
             order.setStatus(Order.OrderStatus.delivered);
             orderRepository.save(order);
+            if (shouldReceiveStock) {
+                stockService.receiveOrder(order);
+            }
         }
 
         return toResponse(shippingRepository.save(shipping));

@@ -8,6 +8,7 @@ import com.dsm.dto.response.ResponseDTO.OrderResponse;
 import com.dsm.dto.response.ResponseDTO.OrderSummaryResponse;
 import com.dsm.dto.response.ResponseDTO.ProductResponse;
 import com.dsm.dto.response.ResponseDTO.ShippingResponse;
+import com.dsm.dto.response.ResponseDTO.SupplierResponse;
 import com.dsm.entities.*;
 import com.dsm.exception.*;
 import com.dsm.repositories.*;
@@ -29,13 +30,16 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final ShippingRepository shippingRepository;
     private final InvoiceRepository invoiceRepository;
+    private final SupplierRepository supplierRepository;
     private final CustomerService customerService;
 
     //#region Main
     public OrderResponse addOrder(OrderRequest request) {
         Customer customer = customerService.findById(request.getCustomerId());
+        Supplier supplier = findSupplier(request.getSupplierId());
         Order order = Order.builder()
                 .customerId(customer.getId())
+                .supplierId(supplier != null ? supplier.getId() : null)
                 .orderDate(LocalDateTime.now())
                 .status(Order.OrderStatus.pendingApproval)
                 .remark(request.getRemark())
@@ -73,6 +77,10 @@ public class OrderService {
         return orderRepository.getOrdersByCustomerId(customerId).stream().map(this::toSummary).collect(Collectors.toList());
     }
     @Transactional(readOnly = true)
+    public List<OrderSummaryResponse> getOrdersBySupplier(String supplierId) {
+        return orderRepository.getOrdersBySupplierId(supplierId).stream().map(this::toSummary).collect(Collectors.toList());
+    }
+    @Transactional(readOnly = true)
     public List<OrderSummaryResponse> getOrderByStatus(Order.OrderStatus status) {
         return orderRepository.getOrdersByStatus(status).stream().map(this::toSummary).collect(Collectors.toList());
     }
@@ -99,7 +107,9 @@ public class OrderService {
         }
 
         Customer customer = customerService.findById(request.getCustomerId());
+        Supplier supplier = findSupplier(request.getSupplierId());
         order.setCustomerId(customer.getId());
+        order.setSupplierId(supplier != null ? supplier.getId() : null);
         order.setRemark(request.getRemark());
         productRepository.deleteProductByOrderId(id);
         BigDecimal total = BigDecimal.ZERO;
@@ -145,12 +155,20 @@ public class OrderService {
             return null;
         }
     }
+    private Supplier findSupplier(String supplierId) {
+        if (supplierId == null || supplierId.isBlank()) {
+            return null;
+        }
+        return supplierRepository.findById(supplierId).orElseThrow(() -> new ResourceNotFoundException("Supplier With " + supplierId + " Was Not Found."));
+    }
     private OrderResponse toResponse(Order order) {
         List<Product> orderProducts = productRepository.getProductsByOrderId(order.getId());
         List<Shipping> orderShippings = shippingRepository.getShippingsByOrderId(order.getId());
         List<Invoice> orderInvoices = invoiceRepository.getInvoicesByOrderId(order.getId());
         Customer customer = findCustomer(order.getCustomerId());
+        Supplier supplier = findSupplier(order.getSupplierId());
         CustomerResponse customerResponse = null;
+        SupplierResponse supplierResponse = null;
 
         List<ProductResponse> products = orderProducts.stream().map(l -> ProductResponse.builder()
                 .id(l.getId()).product(l.getProduct())
@@ -194,10 +212,23 @@ public class OrderService {
                     .phone(customer.getPhone())
                     .build();
         }
+        if (supplier != null) {
+            supplierResponse = SupplierResponse.builder()
+                    .id(supplier.getId())
+                    .name(supplier.getName())
+                    .email(supplier.getEmail())
+                    .phone(supplier.getPhone())
+                    .address(supplier.getAddress())
+                    .isActive(supplier.getIsActive())
+                    .ordersCount(orderRepository.getOrdersBySupplierId(supplier.getId()).size())
+                    .createdAt(supplier.getCreatedAt())
+                    .build();
+        }
 
         return OrderResponse.builder()
                 .id(order.getId()).orderNumber(order.getOrderNumber())
                 .customer(customerResponse).orderDate(order.getOrderDate())
+                .supplier(supplierResponse)
                 .status(order.getStatus()).totalAmount(order.getTotalAmount())
                 .remark(order.getRemark()).products(products)
                 .shippings(shippings).invoices(invoices)
@@ -206,9 +237,11 @@ public class OrderService {
     }
     private OrderSummaryResponse toSummary(Order order) {
         Customer customer = findCustomer(order.getCustomerId());
+        Supplier supplier = findSupplier(order.getSupplierId());
         return OrderSummaryResponse.builder()
                 .id(order.getId()).orderNumber(order.getOrderNumber())
                 .customerName(customer != null ? customer.getName() : "N/A")
+                .supplierName(supplier != null ? supplier.getName() : "N/A")
                 .orderDate(order.getOrderDate()).status(order.getStatus())
                 .totalAmount(order.getTotalAmount())
                 .ordersCount(productRepository.getProductsByOrderId(order.getId()).size())

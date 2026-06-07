@@ -16,6 +16,8 @@ public class DashboardService {
     private final OrderRepository orderRepository;
     private final CustomerRepository customerRepository;
     private final CarrierRepository transporteurRepository;
+    private final SupplierRepository supplierRepository;
+    private final StockRepository stockRepository;
     private final ShippingRepository shippingRepository;
     private final InvoiceRepository invoiceRepository;
 
@@ -30,6 +32,8 @@ public class DashboardService {
                 .revenue(orderRepository.findAll().stream().map(Order::getTotalAmount).filter(amount -> amount != null).reduce(BigDecimal.ZERO, BigDecimal::add).doubleValue())
                 .totalCustomers(customerRepository.count())
                 .totalCarriers(transporteurRepository.count())
+                .totalSuppliers(supplierRepository.count())
+                .totalStocks(stockRepository.count())
                 .shippingInPerparation(shippingRepository.getShippingsByStatus(Shipping.ShippingStatus.inTransit).size() + shippingRepository.getShippingsByStatus(Shipping.ShippingStatus.shipped).size())
                 .invoicePending(invoiceRepository.getInvoicesByStatus(Invoice.InvoiceStatus.pending).size())
                 .build();

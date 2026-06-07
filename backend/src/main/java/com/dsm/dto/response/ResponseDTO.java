@@ -33,6 +33,17 @@ public class ResponseDTO {
         private LocalDateTime createdAt;
     }
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class SupplierResponse {
+        private String id;
+        private String name;
+        private String email;
+        private String phone;
+        private String address;
+        private Boolean isActive;
+        private int ordersCount;
+        private LocalDateTime createdAt;
+    }
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class ProductResponse {
         private String id;
         private String product;
@@ -42,10 +53,21 @@ public class ResponseDTO {
         private BigDecimal subTotal;
     }
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class StockResponse {
+        private String id;
+        private String product;
+        private String productRef;
+        private Integer quantity;
+        private LocalDateTime lastReceiptDate;
+        private LocalDateTime createdAt;
+        private LocalDateTime updatedAt;
+    }
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class OrderResponse {
         private String id;
         private String orderNumber;
         private CustomerResponse customer;
+        private SupplierResponse supplier;
         private LocalDateTime orderDate;
         private Order.OrderStatus status;
         private BigDecimal totalAmount;
@@ -61,6 +83,7 @@ public class ResponseDTO {
         private String id;
         private String orderNumber;
         private String customerName;
+        private String supplierName;
         private LocalDateTime orderDate;
         private Order.OrderStatus status;
         private BigDecimal totalAmount;

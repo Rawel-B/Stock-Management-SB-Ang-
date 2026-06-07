@@ -14,6 +14,8 @@ import java.util.Optional;
 public interface OrderRepository extends MongoRepository<Order, String> {
     @Query("{ 'customerId': ?0 }")
     List<Order> getOrdersByCustomerId(String clientId);
+    @Query("{ 'supplierId': ?0 }")
+    List<Order> getOrdersBySupplierId(String supplierId);
     @Query("{ 'customerId': ?0 }")
     Page<Order> getOrdersByCustomerIdAndPage(String clientId, Pageable pageable);
     @Query("{ 'status': ?0 }")

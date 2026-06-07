@@ -37,8 +37,8 @@ public class ShippingController {
         return ResponseEntity.ok(shippingService.getAllShippings());
     }
     @GetMapping("/order/{orderId}")
-    public ResponseEntity<List<ShippingResponse>> getShippingsByOrder(@PathVariable String commandeId) {
-        return ResponseEntity.ok(shippingService.getShippingsByOrder(commandeId));
+    public ResponseEntity<List<ShippingResponse>> getShippingsByOrder(@PathVariable String orderId) {
+        return ResponseEntity.ok(shippingService.getShippingsByOrder(orderId));
     }
     @PutMapping("/{id}")
     public ResponseEntity<ShippingResponse> updateShipping(@PathVariable String id, @Valid @RequestBody ShippingRequest request) {

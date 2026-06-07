@@ -8,9 +8,13 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import com.dsm.entities.Carrier;
 import com.dsm.entities.Customer;
+import com.dsm.entities.Stock;
+import com.dsm.entities.Supplier;
 import com.dsm.entities.User;
 import com.dsm.repositories.CarrierRepository;
 import com.dsm.repositories.CustomerRepository;
+import com.dsm.repositories.StockRepository;
+import com.dsm.repositories.SupplierRepository;
 import com.dsm.repositories.UserRepository;
 
 @Component
@@ -20,6 +24,8 @@ public class DataInitializer implements CommandLineRunner {
     private final UserRepository userRepository;
     private final CustomerRepository customerRepository;
     private final CarrierRepository carrierRepository;
+    private final SupplierRepository supplierRepository;
+    private final StockRepository stockRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -50,6 +56,17 @@ public class DataInitializer implements CommandLineRunner {
             carrierRepository.save(Carrier.builder().name("UPS France").phone("+33 800 345 678").rating(new BigDecimal("4.0")).isActive(true).build());
             carrierRepository.save(Carrier.builder().name("La Poste Colissimo").phone("+33 800 456 789").rating(new BigDecimal("3.8")).isActive(true).build());
             log.info("carrier test data created");
+        }
+        if (supplierRepository.count() == 0) {
+            supplierRepository.save(Supplier.builder().name("Global Parts").email("sales@globalparts.com").phone("+33 800 567 890").address("15 Rue Lafayette, 75009 Paris").isActive(true).build());
+            supplierRepository.save(Supplier.builder().name("Euro Supply").email("contact@eurosupply.fr").phone("+33 800 678 901").address("22 Avenue Victor Hugo, 69003 Lyon").isActive(true).build());
+            log.info("supplier test data created");
+        }
+        if (stockRepository.count() == 0) {
+            stockRepository.save(Stock.builder().product("Laptop").productRef("LAP-001").quantity(20).build());
+            stockRepository.save(Stock.builder().product("Monitor").productRef("MON-001").quantity(35).build());
+            stockRepository.save(Stock.builder().product("Keyboard").productRef("KEY-001").quantity(50).build());
+            log.info("stock test data created");
         }
     }
 }

@@ -28,7 +28,7 @@ public class OrderController {
     private final OrderService orderService;
 
     @PostMapping
-    @Operation(summary = "Create New Customer")
+    @Operation(summary = "Create New Order")
     public ResponseEntity<OrderResponse> createNewOrder(@Valid @RequestBody OrderRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(orderService.addOrder(request));
     }
@@ -51,6 +51,11 @@ public class OrderController {
     @Operation(summary = "Orders By Customer")
     public ResponseEntity<List<OrderSummaryResponse>> getOrdersByCustomer(@PathVariable String customerId) {
         return ResponseEntity.ok(orderService.getOrdersByCustomer(customerId));
+    }
+    @GetMapping("/supplier/{supplierId}")
+    @Operation(summary = "Orders By Supplier")
+    public ResponseEntity<List<OrderSummaryResponse>> getOrdersBySupplier(@PathVariable String supplierId) {
+        return ResponseEntity.ok(orderService.getOrdersBySupplier(supplierId));
     }
     @PutMapping("/{id}")
     @Operation(summary = "Update an Order")

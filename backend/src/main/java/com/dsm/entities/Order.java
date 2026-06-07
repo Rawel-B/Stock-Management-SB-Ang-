@@ -24,6 +24,7 @@ public class Order {
     private String id;
     @NotNull(message = "the customer must be specified.")
     private String customerId;
+    private String supplierId;
     private LocalDateTime orderDate;
     @Builder.Default
     private OrderStatus status = OrderStatus.pendingApproval;
