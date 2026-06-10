@@ -33,7 +33,6 @@ public class OrderService {
     private final SupplierRepository supplierRepository;
     private final CustomerService customerService;
 
-    //#region Main
     public OrderResponse addOrder(OrderRequest request) {
         Customer customer = customerService.findById(request.getCustomerId());
         Supplier supplier = findSupplier(request.getSupplierId());
@@ -88,7 +87,7 @@ public class OrderService {
         Order order = findById(id);
 
         if (order.getStatus() != Order.OrderStatus.pendingApproval) {
-            throw new BusinessException("Only Orders Pending Approval Can Be Validated");
+            throw new BusinessException("Only Pending Approval Orders Can Be Validated.");
         }
 
         order.setStatus(Order.OrderStatus.validated);
@@ -96,14 +95,43 @@ public class OrderService {
     }
     public OrderResponse updateStatut(String id, Order.OrderStatus status) {
         Order order = findById(id);
+
+        if (order.getStatus() == status) {
+            return toResponse(order);
+        }
+
+        if (order.getStatus() == Order.OrderStatus.pendingApproval) {
+            if (status == Order.OrderStatus.validated || status == Order.OrderStatus.cancelled) {
+                order.setStatus(status);
+                return toResponse(orderRepository.save(order));
+            }
+            throw new BusinessException("Pending Approval Orders Must Be Validated Before Moving Forward.");
+        }
+
+        if (order.getStatus() == Order.OrderStatus.validated) {
+            if (status == Order.OrderStatus.cancelled) {
+                order.setStatus(status);
+                return toResponse(orderRepository.save(order));
+            }
+            throw new BusinessException("Create A Delivery To Move This Order Forward.");
+        }
+
+        if (order.getStatus() == Order.OrderStatus.ongoing) {
+            throw new BusinessException("Update The Related Delivery To Complete This Order.");
+        }
+
+        if (order.getStatus() == Order.OrderStatus.delivered || order.getStatus() == Order.OrderStatus.cancelled) {
+            throw new BusinessException("This Order Is Already Closed.");
+        }
+
         order.setStatus(status);
         return toResponse(orderRepository.save(order));
     }
     public OrderResponse update(String id, OrderRequest request) {
         Order order = findById(id);
 
-        if (order.getStatus() == Order.OrderStatus.delivered || order.getStatus() == Order.OrderStatus.cancelled) {
-            throw new BusinessException("You Cannot Modify an Already Delivered Or Cancelled Order.");
+        if (order.getStatus() != Order.OrderStatus.pendingApproval && order.getStatus() != Order.OrderStatus.validated) {
+            throw new BusinessException("Only Pending Approval Or Validated Orders Can Be Modified.");
         }
 
         Customer customer = customerService.findById(request.getCustomerId());
@@ -143,7 +171,7 @@ public class OrderService {
 
     public Order findById(String id) {
         return orderRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Order non trouvée: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Order With " + id + " Was Not Found."));
     }
     private Customer findCustomer(String customerId) {
         if (customerId == null) {
@@ -247,6 +275,4 @@ public class OrderService {
                 .ordersCount(productRepository.getProductsByOrderId(order.getId()).size())
                 .build();
     }
-    //#endregion Main
-
 }

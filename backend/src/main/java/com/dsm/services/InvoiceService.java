@@ -21,22 +21,24 @@ public class InvoiceService {
     private final InvoiceRepository invoiceRepository;
     private final OrderService orderService;
 
-    //#region Main
     public InvoiceResponse addInvoice(InvoiceRequest request) {
         Order order = orderService.findById(request.getOrderId());
 
         if (order.getStatus() == Order.OrderStatus.cancelled) {
-            throw new BusinessException("Cannot Invoice a Cancelled Order");
+            throw new BusinessException("Cannot Invoice A Cancelled Order.");
+        }
+        if (order.getStatus() == Order.OrderStatus.pendingApproval) {
+            throw new BusinessException("Only Validated, Ongoing, Or Delivered Orders Can Be Invoiced.");
         }
 
         BigDecimal totalCost = invoiceRepository.getInvoicesByOrderId(order.getId()).stream()
-                .filter(invoice -> invoice.getStatus() == Invoice.InvoiceStatus.completed || invoice.getStatus() == Invoice.InvoiceStatus.processing)
+                .filter(invoice -> invoice.getStatus() == Invoice.InvoiceStatus.completed || invoice.getStatus() == Invoice.InvoiceStatus.processing || invoice.getStatus() == Invoice.InvoiceStatus.pending)
                 .map(Invoice::getAmount)
-                .filter(montant -> montant != null)
+                .filter(amount -> amount != null)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         if (totalCost.compareTo(order.getTotalAmount()) >= 0) {
-            throw new BusinessException("The Invoicing For This Order Is Already Finished.");
+            throw new BusinessException("The Invoicing For This Order Is Already Covered.");
         }
 
         Invoice invoice = Invoice.builder()
@@ -44,15 +46,12 @@ public class InvoiceService {
                 .method(request.getMethod())
                 .amount(request.getAmount())
                 .invoicingDate(LocalDateTime.now())
-                .status(Invoice.InvoiceStatus.processing)
+                .status(Invoice.InvoiceStatus.pending)
                 .transactionRef(request.getTransactionRef() != null ? request.getTransactionRef() : "TXN-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
                 .remark(request.getRemark())
                 .build();
 
-        invoice = invoiceRepository.save(invoice);
-        invoice.setStatus(Invoice.InvoiceStatus.completed); // This Is Still Simulated, Needs To Be Checked Through A Real Service
-        invoice = invoiceRepository.save(invoice);
-        return toResponse(invoice);
+        return toResponse(invoiceRepository.save(invoice));
     }
     @Transactional(readOnly = true)
     public List<InvoiceResponse> getInvoicesByOrder(String orderId) {
@@ -68,6 +67,7 @@ public class InvoiceService {
     }
     public InvoiceResponse updateInvoiceStatus(String id, Invoice.InvoiceStatus status) {
         Invoice invoice = findById(id);
+        validateStatusChange(invoice.getStatus(), status);
         invoice.setStatus(status);
         return toResponse(invoiceRepository.save(invoice));
     }
@@ -82,6 +82,21 @@ public class InvoiceService {
     }
     private Invoice findById(String id) {
         return invoiceRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Invoice With ID " + id + " Was Not Found."));
+    }
+    private void validateStatusChange(Invoice.InvoiceStatus current, Invoice.InvoiceStatus next) {
+        if (current == next) {
+            return;
+        }
+        boolean allowed = switch (current) {
+            case pending -> next == Invoice.InvoiceStatus.processing || next == Invoice.InvoiceStatus.cancelled;
+            case processing -> next == Invoice.InvoiceStatus.completed || next == Invoice.InvoiceStatus.failed || next == Invoice.InvoiceStatus.cancelled;
+            case failed -> next == Invoice.InvoiceStatus.processing || next == Invoice.InvoiceStatus.cancelled;
+            case completed -> next == Invoice.InvoiceStatus.refunded;
+            case refunded, cancelled -> false;
+        };
+        if (!allowed) {
+            throw new BusinessException("This Invoice Cannot Move To That Status.");
+        }
     }
     private InvoiceResponse toResponse(Invoice invoice) {
         Order order = invoice.getOrderId() != null ? orderService.findById(invoice.getOrderId()) : null;
@@ -98,6 +113,4 @@ public class InvoiceService {
                 .createdAt(invoice.getCreatedAt())
                 .build();
     }
-    //#endregion Main
-
 }

@@ -1,0 +1,45 @@
+<section class="profile-page">
+  <article class="profile-card">
+    <div class="profile-overview">
+      <span class="profile-avatar"><i [class]="vm.profileIconClass()"></i></span>
+      <div>
+        <h2>{{ vm.auth.user()?.name }}</h2>
+        <p>{{ vm.auth.user()?.username }}</p>
+      </div>
+    </div>
+    <div class="profile-meta-grid">
+      <div>
+        <span>Role</span>
+        <strong>{{ vm.displayLabel(vm.auth.user()?.role) }}</strong>
+      </div>
+      <div>
+        <span>Email</span>
+        <strong>{{ vm.auth.user()?.email }}</strong>
+      </div>
+    </div>
+  </article>
+
+  <form class="profile-form profile-editor" (ngSubmit)="vm.saveProfile()" novalidate>
+    <div class="profile-head">
+      <div>
+        <span>Account</span>
+        <h2>Edit profile</h2>
+      </div>
+    </div>
+    <label><span>Name</span><input name="profileName" [(ngModel)]="vm.profileForm.name" required /></label>
+    <label><span>Username</span><input name="profileUsername" [(ngModel)]="vm.profileForm.username" required /></label>
+    <label><span>Email</span><input name="profileEmail" type="email" [(ngModel)]="vm.profileForm.email" required /></label>
+    <label><span>New password</span><input name="profilePassword" type="password" [(ngModel)]="vm.profileForm.password" /></label>
+    <div class="icon-picker">
+      <span>Icon</span>
+      <div>
+        @for (icon of vm.profileIcons; track icon) {
+          <button class="icon-button" type="button" [class.active-icon]="vm.profileIcon === icon" (click)="vm.selectProfileIcon(icon)" [attr.aria-label]="'Use ' + icon" data-tooltip="Use icon">
+            <i [class]="'pi ' + icon"></i>
+          </button>
+        }
+      </div>
+    </div>
+    <button class="primary-button" type="submit" [disabled]="vm.loading">Save profile</button>
+  </form>
+</section>

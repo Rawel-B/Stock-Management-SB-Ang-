@@ -1,0 +1,63 @@
+<section class="workspace-grid">
+  @if (vm.formVisible('suppliers')) {
+    <div class="form-backdrop" (click)="vm.closeForm('suppliers')">
+    <form class="workspace-form modal-form" (ngSubmit)="vm.saveSupplier()" (click)="$event.stopPropagation()" novalidate>
+      <div class="form-head">
+        <button class="icon-button" type="button" (click)="vm.closeForm('suppliers')" aria-label="Back" data-tooltip="Back">
+          <i class="pi pi-arrow-left"></i>
+        </button>
+        <h2>{{ vm.supplierEditId ? 'Update Supplier' : 'New Supplier' }}</h2>
+      </div>
+      <label><span>Name</span><input name="supplierName" [(ngModel)]="vm.supplierForm.name" required /></label>
+      <label><span>Email</span><input name="supplierEmail" type="email" [(ngModel)]="vm.supplierForm.email" /></label>
+      <label><span>Phone</span><input name="supplierPhone" [(ngModel)]="vm.supplierForm.phone" /></label>
+      <label><span>Address</span><input name="supplierAddress" [(ngModel)]="vm.supplierForm.address" /></label>
+      <label class="active-toggle">
+        <input name="supplierActive" type="checkbox" [(ngModel)]="vm.supplierForm.isActive" />
+        <span></span>
+        <strong>Active</strong>
+      </label>
+      <button class="primary-button" type="submit" [disabled]="vm.loading">{{ vm.supplierEditId ? 'Update' : 'Create' }}</button>
+    </form>
+    </div>
+  }
+
+  <section class="workspace-table">
+    <div class="table-head">
+      <h2>Suppliers</h2>
+      <button class="icon-button" type="button" (click)="vm.openCreate('suppliers')" aria-label="New Supplier" data-tooltip="New Supplier">
+        <i class="pi pi-plus"></i>
+      </button>
+    </div>
+    @for (supplier of vm.suppliers; track supplier.id) {
+      <div class="row-shell">
+        <article class="table-row" [class.open-row]="vm.isRowExpanded('suppliers', supplier.id)" (click)="vm.toggleRow('suppliers', supplier.id)">
+          <div>
+            <strong>{{ supplier.name }}</strong>
+            <span>{{ supplier.email || supplier.phone || 'No contact' }}</span>
+          </div>
+          <span>{{ supplier.ordersCount }} orders</span>
+          <div class="row-actions" (click)="$event.stopPropagation()">
+            <button class="icon-button" type="button" (click)="vm.editSupplier(supplier)" aria-label="Edit supplier" data-tooltip="Edit">
+              <i class="pi pi-pencil"></i>
+            </button>
+            <button class="icon-button" type="button" (click)="vm.deleteSupplier(supplier.id)" aria-label="Delete supplier" data-tooltip="Delete">
+              <i class="pi pi-trash"></i>
+            </button>
+          </div>
+          <span class="row-chevron"><i class="pi pi-chevron-down"></i></span>
+        </article>
+        @if (vm.isRowExpanded('suppliers', supplier.id)) {
+          <section class="row-detail">
+            <div><span>Name</span><strong>{{ supplier.name }}</strong></div>
+            <div><span>Email</span><strong>{{ supplier.email || 'No email' }}</strong></div>
+            <div><span>Phone</span><strong>{{ supplier.phone || 'No phone' }}</strong></div>
+            <div><span>Address</span><strong>{{ supplier.address || 'No address' }}</strong></div>
+            <div><span>Status</span><strong>{{ supplier.isActive ? 'Active' : 'Inactive' }}</strong></div>
+            <div><span>Orders</span><strong>{{ supplier.ordersCount }}</strong></div>
+          </section>
+        }
+      </div>
+    }
+  </section>
+</section>

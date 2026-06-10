@@ -57,8 +57,20 @@ public class ResponseDTO {
         private String id;
         private String product;
         private String productRef;
+        private String locationId;
+        private String location;
         private Integer quantity;
         private LocalDateTime lastReceiptDate;
+        private LocalDateTime createdAt;
+        private LocalDateTime updatedAt;
+    }
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class LocationResponse {
+        private String id;
+        private String name;
+        private String code;
+        private String description;
+        private int stockCount;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
     }
@@ -117,14 +129,17 @@ public class ResponseDTO {
         private String remark;
         private LocalDateTime createdAt;
     }
-    //====> Authentication
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class AuthResponse {
         private String token;
         private String username;
         private String name;
+        private String email;
         private String role;
     }
-    //====>
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class MessageResponse {
+        private String message;
+    }
 
 }

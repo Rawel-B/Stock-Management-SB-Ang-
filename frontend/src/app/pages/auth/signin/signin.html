@@ -1,0 +1,93 @@
+<main class="auth-page signin-page">
+  <section class="signin-panel" aria-label="DSM">
+    <div class="signin-brand">
+      <div class="brand-mark">
+        <span>DSM</span>
+      </div>
+      <div>
+        <strong>DSM</strong>
+        <span>Delivery Stock Management</span>
+      </div>
+    </div>
+
+    <div class="signin-feature-list">
+      <div>
+        <i class="pi pi-shopping-cart"></i>
+        <div>
+          <strong>Orders</strong>
+          <span>Approval and status flow.</span>
+        </div>
+      </div>
+      <div>
+        <i class="pi pi-truck"></i>
+        <div>
+          <strong>Deliveries</strong>
+          <span>Tracking and carrier control.</span>
+        </div>
+      </div>
+      <div>
+        <i class="pi pi-file"></i>
+        <div>
+          <strong>Invoices</strong>
+          <span>Payment records in one place.</span>
+        </div>
+      </div>
+      <div>
+        <i class="pi pi-box"></i>
+        <div>
+          <strong>Stock</strong>
+          <span>Inventory updates with orders.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="auth-card signin-card" aria-label="Sign in form">
+    <div class="auth-card-brand signin-card-brand">
+      <div class="brand-mark small-brand-mark">
+        <span>DSM</span>
+      </div>
+      <strong>DSM</strong>
+    </div>
+
+    <div class="auth-card-header">
+      <h2>Welcome back</h2>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="auth-form">
+      <label>
+        <span>Username</span>
+        <input type="text" formControlName="username" autocomplete="username" />
+      </label>
+      @if (submitted() && form.controls.username.invalid) {
+        <p class="field-error">Username is required.</p>
+      }
+
+      <label>
+        <span>Password</span>
+        <input type="password" formControlName="password" autocomplete="current-password" />
+      </label>
+      @if (submitted() && form.controls.password.invalid) {
+        <p class="field-error">Password is required.</p>
+      }
+
+      <div class="form-row">
+        <label class="checkbox-label">
+          <input type="checkbox" formControlName="remember" />
+          <span>Remember me</span>
+        </label>
+        <a routerLink="/auth/forgot-password">Forgot password?</a>
+      </div>
+
+      @if (error()) {
+        <p class="form-error">{{ error() }}</p>
+      }
+
+      <button class="primary-button" type="submit" [disabled]="loading()">
+        {{ loading() ? 'Signing in...' : 'Sign in' }}
+      </button>
+    </form>
+
+    <p class="auth-switch">No account yet? <a routerLink="/auth/signup">Create one</a></p>
+  </section>
+</main>

@@ -1,0 +1,65 @@
+<section class="workspace-grid">
+  @if (vm.formVisible('stock')) {
+    <div class="form-backdrop" (click)="vm.closeForm('stock')">
+    <form class="workspace-form modal-form" (ngSubmit)="vm.saveStock()" (click)="$event.stopPropagation()" novalidate>
+      <div class="form-head">
+        <button class="icon-button" type="button" (click)="vm.closeForm('stock')" aria-label="Back" data-tooltip="Back">
+          <i class="pi pi-arrow-left"></i>
+        </button>
+        <h2>{{ vm.stockEditId ? 'Update Stock' : 'New Stock' }}</h2>
+      </div>
+      <label><span>Product</span><input name="stockProduct" [(ngModel)]="vm.stockForm.product" required /></label>
+      <label><span>Reference</span><input name="stockRef" [(ngModel)]="vm.stockForm.productRef" /></label>
+      <label>
+        <span>Location</span>
+        <select name="stockLocation" [(ngModel)]="vm.stockForm.locationId">
+          <option value="">No location</option>
+          @for (location of vm.locations; track location.id) {
+            <option [value]="location.id">{{ location.name }}</option>
+          }
+        </select>
+      </label>
+      <label><span>Quantity</span><input name="stockQuantity" type="number" min="0" [(ngModel)]="vm.stockForm.quantity" required /></label>
+      <button class="primary-button" type="submit" [disabled]="vm.loading">{{ vm.stockEditId ? 'Update' : 'Create' }}</button>
+    </form>
+    </div>
+  }
+
+  <section class="workspace-table">
+    <div class="table-head">
+      <h2>Stock</h2>
+      <button class="icon-button" type="button" (click)="vm.openCreate('stock')" aria-label="New Stock" data-tooltip="New Stock">
+        <i class="pi pi-plus"></i>
+      </button>
+    </div>
+    @for (stock of vm.stocks; track stock.id) {
+      <div class="row-shell">
+        <article class="table-row" [class.open-row]="vm.isRowExpanded('stock', stock.id)" (click)="vm.toggleRow('stock', stock.id)">
+          <div>
+            <strong>{{ stock.product }}</strong>
+            <span>{{ stock.productRef || 'No reference' }}</span>
+            <span>{{ stock.location || 'No location assigned' }}</span>
+          </div>
+          <span>{{ stock.quantity }}</span>
+          <div class="row-actions" (click)="$event.stopPropagation()">
+            <button class="icon-button" type="button" (click)="vm.editStock(stock)" aria-label="Edit stock" data-tooltip="Edit">
+              <i class="pi pi-pencil"></i>
+            </button>
+            <button class="icon-button" type="button" (click)="vm.deleteStock(stock.id)" aria-label="Delete stock" data-tooltip="Delete">
+              <i class="pi pi-trash"></i>
+            </button>
+          </div>
+          <span class="row-chevron"><i class="pi pi-chevron-down"></i></span>
+        </article>
+        @if (vm.isRowExpanded('stock', stock.id)) {
+          <section class="row-detail">
+            <div><span>Product</span><strong>{{ stock.product }}</strong></div>
+            <div><span>Reference</span><strong>{{ stock.productRef || 'No reference' }}</strong></div>
+            <div><span>Location</span><strong>{{ stock.location || 'No location assigned' }}</strong></div>
+            <div><span>Quantity</span><strong>{{ stock.quantity }}</strong></div>
+          </section>
+        }
+      </div>
+    }
+  </section>
+</section>

@@ -2,11 +2,13 @@ package com.dsm.services;
 
 import com.dsm.dto.request.RequestDTO.StockRequest;
 import com.dsm.dto.response.ResponseDTO.StockResponse;
+import com.dsm.entities.Location;
 import com.dsm.entities.Order;
 import com.dsm.entities.Product;
 import com.dsm.entities.Stock;
 import com.dsm.exception.DuplicateResourceException;
 import com.dsm.exception.ResourceNotFoundException;
+import com.dsm.repositories.LocationRepository;
 import com.dsm.repositories.ProductRepository;
 import com.dsm.repositories.StockRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,15 +24,19 @@ import java.util.stream.Collectors;
 public class StockService {
     private final StockRepository stockRepository;
     private final ProductRepository productRepository;
+    private final LocationRepository locationRepository;
 
     public StockResponse addStock(StockRequest request) {
         if (request.getProductRef() != null && !request.getProductRef().isBlank() && stockRepository.getStockByProductRef(request.getProductRef()).isPresent()) {
             throw new DuplicateResourceException("Stock With This Product Reference Already Exists.");
         }
 
+        Location location = findLocation(request.getLocationId());
         Stock stock = Stock.builder()
                 .product(request.getProduct())
                 .productRef(request.getProductRef())
+                .locationId(location != null ? location.getId() : null)
+                .location(location != null ? location.getName() : null)
                 .quantity(request.getQuantity() != null ? request.getQuantity() : 0)
                 .build();
         return toResponse(stockRepository.save(stock));
@@ -54,8 +60,11 @@ public class StockService {
             throw new DuplicateResourceException("Stock With This Product Reference Already Exists.");
         }
 
+        Location location = findLocation(request.getLocationId());
         stock.setProduct(request.getProduct());
         stock.setProductRef(request.getProductRef());
+        stock.setLocationId(location != null ? location.getId() : null);
+        stock.setLocation(location != null ? location.getName() : null);
         stock.setQuantity(request.getQuantity() != null ? request.getQuantity() : stock.getQuantity());
         return toResponse(stockRepository.save(stock));
     }
@@ -78,6 +87,12 @@ public class StockService {
     private Stock findById(String id) {
         return stockRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Stock With ID " + id + " Was Not Found."));
     }
+    private Location findLocation(String locationId) {
+        if (locationId == null || locationId.isBlank()) {
+            return null;
+        }
+        return locationRepository.findById(locationId).orElseThrow(() -> new ResourceNotFoundException("Location With ID " + locationId + " Was Not Found."));
+    }
     private Stock findStockForProduct(Product product) {
         if (product.getProductRef() != null && !product.getProductRef().isBlank()) {
             return stockRepository.getStockByProductRef(product.getProductRef()).orElseGet(() -> Stock.builder()
@@ -97,6 +112,8 @@ public class StockService {
                 .id(stock.getId())
                 .product(stock.getProduct())
                 .productRef(stock.getProductRef())
+                .locationId(stock.getLocationId())
+                .location(stock.getLocation())
                 .quantity(stock.getQuantity())
                 .lastReceiptDate(stock.getLastReceiptDate())
                 .createdAt(stock.getCreatedAt())

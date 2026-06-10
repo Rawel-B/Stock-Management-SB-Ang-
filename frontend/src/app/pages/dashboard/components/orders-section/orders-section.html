@@ -1,0 +1,153 @@
+<section class="workspace-grid wide-form">
+  @if (vm.formVisible('orders')) {
+    <div class="form-backdrop" (click)="vm.closeForm('orders')">
+    <form class="workspace-form modal-form wide-modal-form" (ngSubmit)="vm.saveOrder()" (click)="$event.stopPropagation()" novalidate>
+    <div class="form-head">
+      <button class="icon-button" type="button" (click)="vm.closeForm('orders')" aria-label="Back" data-tooltip="Back">
+        <i class="pi pi-arrow-left"></i>
+      </button>
+      <h2>{{ vm.orderEditId ? 'Update Order' : 'New Order' }}</h2>
+    </div>
+    <label>
+      <span>Customer</span>
+      <select name="orderCustomer" [(ngModel)]="vm.orderForm.customerId" required>
+        <option value="">Select customer</option>
+        @for (customer of vm.customers; track customer.id) {
+          <option [value]="customer.id">{{ customer.name }}</option>
+        }
+      </select>
+    </label>
+    <label>
+      <span>Supplier</span>
+      <select name="orderSupplier" [(ngModel)]="vm.orderForm.supplierId">
+        <option value="">No supplier</option>
+        @for (supplier of vm.suppliers; track supplier.id) {
+          <option [value]="supplier.id">{{ supplier.name }}</option>
+        }
+      </select>
+    </label>
+    <label><span>Remark</span><textarea name="orderRemark" [(ngModel)]="vm.orderForm.remark"></textarea></label>
+
+    <div class="product-form">
+      <label><span>Product</span><input name="productName" [(ngModel)]="vm.productForm.product" /></label>
+      <label><span>Reference</span><input name="productRef" [(ngModel)]="vm.productForm.productRef" /></label>
+      <label><span>Qty</span><input name="productQty" type="number" min="1" [(ngModel)]="vm.productForm.quantity" /></label>
+      <label><span>Price</span><input name="productPrice" type="number" min="0" step="0.01" [(ngModel)]="vm.productForm.pricePerUnit" /></label>
+      <button class="secondary-button" type="button" (click)="vm.addProduct()">Add product</button>
+    </div>
+
+    @for (product of vm.orderForm.products; track $index) {
+      <div class="product-line">
+        <span>{{ product.product }} - {{ product.quantity }} x {{ product.pricePerUnit | currency }}</span>
+        <button type="button" (click)="vm.removeProduct($index)">Remove</button>
+      </div>
+    }
+
+    <button class="primary-button" type="submit" [disabled]="vm.loading">{{ vm.orderEditId ? 'Update' : 'Create' }}</button>
+  </form>
+    </div>
+  }
+
+  <section class="workspace-table">
+    <div class="table-head">
+      <h2>Orders</h2>
+      <button class="icon-button" type="button" (click)="vm.openCreate('orders')" aria-label="New Order" data-tooltip="New Order">
+        <i class="pi pi-plus"></i>
+      </button>
+    </div>
+    @for (order of vm.orders; track order.id) {
+      <div class="row-shell">
+        <article class="table-row order-row" [class.open-row]="vm.isRowExpanded('orders', order.id)" (click)="vm.toggleRow('orders', order.id)">
+          <div>
+            <strong>{{ order.orderNumber }}</strong>
+            <span>{{ order.customerName }} - {{ order.totalAmount | currency }}</span>
+          </div>
+          <div class="order-status-stack">
+            <span class="status-pill" [class.cancelled]="order.status === 'cancelled'">{{ vm.orderStatusLabel(order.status) }}</span>
+            <div class="phase-control" aria-label="Order status workflow">
+              <div class="phase-track">
+                @for (status of vm.orderWorkflowStatuses; track status) {
+                  <span class="phase-step" [class.done]="vm.orderStepDone(order.status, status)" [class.active]="order.status === status">
+                    <i></i>
+                    <small>{{ vm.orderStatusLabel(status) }}</small>
+                  </span>
+                }
+              </div>
+              <div class="phase-actions" (click)="$event.stopPropagation()">
+                @if (vm.orderHasNextAction(order.status)) {
+                  <button class="phase-action" type="button" (click)="vm.runOrderNext(order)">
+                    <i [class]="vm.orderNextActionIcon(order.status)"></i>
+                    <span>{{ vm.orderNextActionLabel(order.status) }}</span>
+                  </button>
+                }
+                @if (vm.orderCanCancel(order.status)) {
+                  <button class="phase-action danger-action" type="button" (click)="vm.cancelOrder(order)">
+                    <i class="pi pi-ban"></i>
+                    <span>Cancel Order</span>
+                  </button>
+                }
+              </div>
+            </div>
+          </div>
+          <div class="row-actions" (click)="$event.stopPropagation()">
+            <button class="icon-button" type="button" (click)="vm.editOrder(order)" aria-label="Edit order" data-tooltip="Edit">
+              <i class="pi pi-pencil"></i>
+            </button>
+            @if (order.status === 'pendingApproval') {
+              <button class="icon-button" type="button" (click)="vm.validateOrder(order.id)" aria-label="Validate Order" data-tooltip="Validate Order">
+                <i class="pi pi-check"></i>
+              </button>
+            }
+            <button class="icon-button" type="button" (click)="vm.deleteOrder(order.id)" aria-label="Delete order" data-tooltip="Delete">
+              <i class="pi pi-trash"></i>
+            </button>
+          </div>
+          <span class="row-chevron"><i class="pi pi-chevron-down"></i></span>
+        </article>
+        @if (vm.isRowExpanded('orders', order.id)) {
+          <section class="row-detail order-detail">
+            @if (vm.orderDetailsLoading[order.id]) {
+              <p class="detail-muted">Loading details...</p>
+            } @else if (vm.orderDetails[order.id]; as detail) {
+              <div><span>Order</span><strong>{{ detail.orderNumber }}</strong></div>
+              <div><span>Customer</span><strong>{{ detail.customer.name || order.customerName }}</strong></div>
+              <div><span>Supplier</span><strong>{{ detail.supplier?.name || 'No supplier' }}</strong></div>
+              <div><span>Status</span><strong>{{ vm.orderStatusLabel(detail.status) }}</strong></div>
+              <div><span>Total</span><strong>{{ detail.totalAmount | currency }}</strong></div>
+              <div class="detail-wide"><span>Remark</span><strong>{{ detail.remark || 'No remark' }}</strong></div>
+              <div class="detail-wide detail-lines">
+                <span>Products</span>
+                @for (product of detail.products; track product.id) {
+                  <strong>{{ product.product }} - {{ product.quantity }} x {{ product.pricePerUnit | currency }} = {{ product.subTotal | currency }}</strong>
+                } @empty {
+                  <strong>No products</strong>
+                }
+              </div>
+              <div class="detail-wide detail-lines">
+                <span>Deliveries</span>
+                @for (shipping of detail.shippings; track shipping.id) {
+                  <strong>{{ shipping.carrier?.name || 'No carrier' }} - {{ vm.shippingStatusLabel(shipping.status) }}</strong>
+                } @empty {
+                  <strong>No deliveries</strong>
+                }
+              </div>
+              <div class="detail-wide detail-lines">
+                <span>Invoices</span>
+                @for (invoice of detail.invoices; track invoice.id) {
+                  <strong>{{ invoice.amount | currency }} - {{ vm.invoiceStatusLabel(invoice.invoiceStatus) }}</strong>
+                } @empty {
+                  <strong>No invoices</strong>
+                }
+              </div>
+            } @else {
+              <div><span>Order</span><strong>{{ order.orderNumber }}</strong></div>
+              <div><span>Customer</span><strong>{{ order.customerName }}</strong></div>
+              <div><span>Status</span><strong>{{ vm.orderStatusLabel(order.status) }}</strong></div>
+              <div><span>Total</span><strong>{{ order.totalAmount | currency }}</strong></div>
+            }
+          </section>
+        }
+      </div>
+    }
+  </section>
+</section>

@@ -10,6 +10,8 @@ import java.util.Optional;
 public interface UserRepository extends MongoRepository<User, String> {
     @Query("{ 'username': ?0 }")
     Optional<User> getUserByUsername(String username);
+    @Query("{ 'email': ?0 }")
+    Optional<User> getUserByEmail(String email);
     @Query(value = "{ 'username': ?0 }", exists = true)
     boolean checkUsernameValidity(String username);
     @Query(value = "{ 'email': ?0 }", exists = true)

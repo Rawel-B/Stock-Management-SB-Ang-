@@ -1,0 +1,56 @@
+<section class="workspace-grid">
+  @if (vm.formVisible('locations')) {
+    <div class="form-backdrop" (click)="vm.closeForm('locations')">
+    <form class="workspace-form modal-form" (ngSubmit)="vm.saveLocation()" (click)="$event.stopPropagation()" novalidate>
+      <div class="form-head">
+        <button class="icon-button" type="button" (click)="vm.closeForm('locations')" aria-label="Back" data-tooltip="Back">
+          <i class="pi pi-arrow-left"></i>
+        </button>
+        <h2>{{ vm.locationEditId ? 'Update Location' : 'New Location' }}</h2>
+      </div>
+      <label><span>Name</span><input name="locationName" [(ngModel)]="vm.locationForm.name" required /></label>
+      <label><span>Code</span><input name="locationCode" [(ngModel)]="vm.locationForm.code" /></label>
+      <label><span>Description</span><textarea name="locationDescription" [(ngModel)]="vm.locationForm.description"></textarea></label>
+      <button class="primary-button" type="submit" [disabled]="vm.loading">{{ vm.locationEditId ? 'Update' : 'Create' }}</button>
+    </form>
+    </div>
+  }
+
+  <section class="workspace-table">
+    <div class="table-head">
+      <h2>Locations</h2>
+      <button class="icon-button" type="button" (click)="vm.openCreate('locations')" aria-label="New Location" data-tooltip="New Location">
+        <i class="pi pi-plus"></i>
+      </button>
+    </div>
+    @for (location of vm.locations; track location.id) {
+      <div class="row-shell">
+        <article class="table-row" [class.open-row]="vm.isRowExpanded('locations', location.id)" (click)="vm.toggleRow('locations', location.id)">
+          <div>
+            <strong>{{ location.name }}</strong>
+            <span>{{ location.code || 'No code' }}</span>
+            <span>{{ location.description || 'No description' }}</span>
+          </div>
+          <span>{{ location.stockCount }} stock items</span>
+          <div class="row-actions" (click)="$event.stopPropagation()">
+            <button class="icon-button" type="button" (click)="vm.editLocation(location)" aria-label="Edit location" data-tooltip="Edit">
+              <i class="pi pi-pencil"></i>
+            </button>
+            <button class="icon-button" type="button" (click)="vm.deleteLocation(location.id)" aria-label="Delete location" data-tooltip="Delete">
+              <i class="pi pi-trash"></i>
+            </button>
+          </div>
+          <span class="row-chevron"><i class="pi pi-chevron-down"></i></span>
+        </article>
+        @if (vm.isRowExpanded('locations', location.id)) {
+          <section class="row-detail">
+            <div><span>Name</span><strong>{{ location.name }}</strong></div>
+            <div><span>Code</span><strong>{{ location.code || 'No code' }}</strong></div>
+            <div><span>Description</span><strong>{{ location.description || 'No description' }}</strong></div>
+            <div><span>Stock items</span><strong>{{ location.stockCount }}</strong></div>
+          </section>
+        }
+      </div>
+    }
+  </section>
+</section>

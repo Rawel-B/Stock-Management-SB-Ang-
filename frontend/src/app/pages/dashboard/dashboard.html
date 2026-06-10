@@ -1,1 +1,135 @@
-<p>dashboard works!</p>
+<main class="workspace-page">
+  <aside class="workspace-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark small-brand-mark">
+        <span>DSM</span>
+      </div>
+      <span class="brand-separator"></span>
+      <div class="brand-copy">
+        <strong>Delivery Stock Management</strong>
+      </div>
+    </div>
+
+    <nav class="workspace-nav" aria-label="Workspace sections">
+      @for (group of navGroups; track group.label) {
+        <section class="nav-group" [class.support-group]="group.label === 'Support'" [class.primary-group]="!group.label">
+          @if (group.label) {
+            <h2>{{ group.label }}</h2>
+          }
+          <div>
+            @for (item of group.items; track item.id) {
+              <button type="button" [class.active]="activeSection === item.id" (click)="setSection(item.id)">
+                <i [class]="item.icon"></i>
+                <span>{{ item.label }}</span>
+              </button>
+            }
+          </div>
+        </section>
+      }
+    </nav>
+  </aside>
+
+  <section class="workspace-main">
+    <header class="workspace-header">
+      <div class="page-title">
+        <h1>{{ currentSectionLabel() }}</h1>
+      </div>
+      <div class="header-actions">
+        <div class="account-menu">
+          <button class="account-button" type="button" (click)="toggleAccountMenu()" aria-label="Open profile menu" data-tooltip="Profile" [attr.aria-expanded]="accountMenuOpen">
+            <i [class]="profileIconClass()"></i>
+          </button>
+          @if (accountMenuOpen) {
+            <section class="account-dropdown" aria-label="Profile menu">
+              <div class="account-dropdown-head">
+                <span class="profile-avatar small-profile-avatar"><i [class]="profileIconClass()"></i></span>
+                <div>
+                  <strong>{{ auth.user()?.name }}</strong>
+                  <span class="account-role">{{ displayLabel(auth.user()?.role) }}</span>
+                  <small>{{ auth.user()?.username }}</small>
+                  <small>{{ auth.user()?.email }}</small>
+                </div>
+              </div>
+              <button type="button" (click)="openProfile()">
+                <i class="pi pi-user-edit"></i>
+                <span>Profile</span>
+              </button>
+            </section>
+          }
+        </div>
+        <button class="signout-button" type="button" (click)="signOut()" aria-label="Sign out" data-tooltip="Sign out">
+          <i class="pi pi-sign-out"></i>
+        </button>
+      </div>
+    </header>
+
+    @if (toast; as currentToast) {
+      <section class="workspace-toast" [class.error-toast]="currentToast.type === 'error'" role="status">
+        <i [class]="currentToast.type === 'success' ? 'pi pi-check' : 'pi pi-exclamation-triangle'"></i>
+        <div>
+          <strong>{{ currentToast.type === 'success' ? 'Success' : 'Error' }}</strong>
+          <p>{{ currentToast.message }}</p>
+        </div>
+        <button type="button" (click)="dismissToast()" aria-label="Dismiss notification">
+          <i class="pi pi-times"></i>
+        </button>
+      </section>
+    }
+
+    @if (activeSection === 'profile') {
+      <app-profile-section [vm]="vm"></app-profile-section>
+    }
+
+    @if (activeSection === 'support') {
+      <app-support-section [vm]="vm"></app-support-section>
+    }
+
+    @if (activeSection === 'overview') {
+      <app-overview-section [vm]="vm"></app-overview-section>
+    }
+    @if (activeSection === 'customers') {
+      <app-customers-section [vm]="vm"></app-customers-section>
+    }
+
+    @if (activeSection === 'suppliers') {
+      <app-suppliers-section [vm]="vm"></app-suppliers-section>
+    }
+
+    @if (activeSection === 'carriers') {
+      <app-carriers-section [vm]="vm"></app-carriers-section>
+    }
+
+    @if (activeSection === 'stock') {
+      <app-stock-section [vm]="vm"></app-stock-section>
+    }
+
+    @if (activeSection === 'locations') {
+      <app-locations-section [vm]="vm"></app-locations-section>
+    }
+
+    @if (activeSection === 'orders') {
+      <app-orders-section [vm]="vm"></app-orders-section>
+    }
+
+    @if (activeSection === 'deliveries') {
+      <app-deliveries-section [vm]="vm"></app-deliveries-section>
+    }
+
+    @if (activeSection === 'payments') {
+      <app-invoices-section [vm]="vm"></app-invoices-section>
+    }
+  </section>
+  @if (confirmation; as item) {
+    <div class="confirm-backdrop" (click)="closeConfirmation()">
+      <section class="confirm-toast" role="dialog" aria-modal="true" aria-label="Confirmation" (click)="$event.stopPropagation()">
+        <span>Confirm action</span>
+        <h2>{{ item.title }}</h2>
+        <p>{{ item.message }}</p>
+        <div>
+          <button class="secondary-button" type="button" (click)="closeConfirmation()">Cancel</button>
+          <button class="primary-button" type="button" (click)="confirmAction()">{{ item.confirmText }}</button>
+        </div>
+      </section>
+    </div>
+  }
+</main>

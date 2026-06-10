@@ -25,6 +25,8 @@ public class Stock {
     @NotBlank(message = "the product must be specified.")
     private String product;
     private String productRef;
+    private String locationId;
+    private String location;
     @Builder.Default
     @Min(0)
     private Integer quantity = 0;

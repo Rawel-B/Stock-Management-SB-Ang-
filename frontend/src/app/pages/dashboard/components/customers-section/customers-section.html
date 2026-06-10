@@ -1,0 +1,57 @@
+<section class="workspace-grid">
+  @if (vm.formVisible('customers')) {
+    <div class="form-backdrop" (click)="vm.closeForm('customers')">
+    <form class="workspace-form modal-form" (ngSubmit)="vm.saveCustomer()" (click)="$event.stopPropagation()" novalidate>
+      <div class="form-head">
+        <button class="icon-button" type="button" (click)="vm.closeForm('customers')" aria-label="Back" data-tooltip="Back">
+          <i class="pi pi-arrow-left"></i>
+        </button>
+        <h2>{{ vm.customerEditId ? 'Update Customer' : 'New Customer' }}</h2>
+      </div>
+      <label><span>Name</span><input name="customerName" [(ngModel)]="vm.customerForm.name" required /></label>
+      <label><span>Email</span><input name="customerEmail" type="email" [(ngModel)]="vm.customerForm.email" required /></label>
+      <label><span>Phone</span><input name="customerPhone" [(ngModel)]="vm.customerForm.phone" /></label>
+      <label><span>Address</span><input name="customerAddress" [(ngModel)]="vm.customerForm.address" /></label>
+      <button class="primary-button" type="submit" [disabled]="vm.loading">{{ vm.customerEditId ? 'Update' : 'Create' }}</button>
+    </form>
+    </div>
+  }
+
+  <section class="workspace-table">
+    <div class="table-head">
+      <h2>Customers</h2>
+      <button class="icon-button" type="button" (click)="vm.openCreate('customers')" aria-label="New Customer" data-tooltip="New Customer">
+        <i class="pi pi-plus"></i>
+      </button>
+    </div>
+    @for (customer of vm.customers; track customer.id) {
+      <div class="row-shell">
+        <article class="table-row" [class.open-row]="vm.isRowExpanded('customers', customer.id)" (click)="vm.toggleRow('customers', customer.id)">
+          <div>
+            <strong>{{ customer.name }}</strong>
+            <span>{{ customer.email }}</span>
+          </div>
+          <span>{{ customer.ordersCount }} orders</span>
+          <div class="row-actions" (click)="$event.stopPropagation()">
+            <button class="icon-button" type="button" (click)="vm.editCustomer(customer)" aria-label="Edit customer" data-tooltip="Edit">
+              <i class="pi pi-pencil"></i>
+            </button>
+            <button class="icon-button" type="button" (click)="vm.deleteCustomer(customer.id)" aria-label="Delete customer" data-tooltip="Delete">
+              <i class="pi pi-trash"></i>
+            </button>
+          </div>
+          <span class="row-chevron"><i class="pi pi-chevron-down"></i></span>
+        </article>
+        @if (vm.isRowExpanded('customers', customer.id)) {
+          <section class="row-detail">
+            <div><span>Name</span><strong>{{ customer.name }}</strong></div>
+            <div><span>Email</span><strong>{{ customer.email }}</strong></div>
+            <div><span>Phone</span><strong>{{ customer.phone || 'No phone' }}</strong></div>
+            <div><span>Address</span><strong>{{ customer.address || 'No address' }}</strong></div>
+            <div><span>Orders</span><strong>{{ customer.ordersCount }}</strong></div>
+          </section>
+        }
+      </div>
+    }
+  </section>
+</section>

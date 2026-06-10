@@ -6,6 +6,7 @@ import com.dsm.dto.response.*;
 import com.dsm.dto.response.ResponseDTO.CarrierResponse;
 import com.dsm.dto.response.ResponseDTO.ShippingResponse;
 import com.dsm.entities.*;
+import com.dsm.exception.BusinessException;
 import com.dsm.exception.ResourceNotFoundException;
 import com.dsm.repositories.CarrierRepository;
 import com.dsm.repositories.OrderRepository;
@@ -29,6 +30,9 @@ public class ShippingService {
         Order order = orderService.findById(request.getOrderId());
         Carrier carrier = null;
 
+        if (order.getStatus() != Order.OrderStatus.validated && order.getStatus() != Order.OrderStatus.ongoing) {
+            throw new BusinessException("Only Validated Or Ongoing Orders Can Have Deliveries.");
+        }
         if (request.getCarrierId() != null) {
             carrier = carrierRepository.findById(request.getCarrierId()).orElseThrow(() -> new ResourceNotFoundException("Carrier Was Not Found."));
         }
@@ -44,10 +48,8 @@ public class ShippingService {
                 .status(Shipping.ShippingStatus.inPerparation)
                 .build();
 
-        if (order.getStatus() == Order.OrderStatus.validated) {
-            order.setStatus(Order.OrderStatus.ongoing);
-            orderRepository.save(order);
-        }
+        order.setStatus(Order.OrderStatus.ongoing);
+        orderRepository.save(order);
 
         return toResponse(shippingRepository.save(shipping));
     }
@@ -68,6 +70,7 @@ public class ShippingService {
     }
     public ShippingResponse updateShippingStatus(String id, Shipping.ShippingStatus status) {
         Shipping shipping = findShippingById(id);
+        validateStatusChange(shipping.getStatus(), status);
         boolean shouldReceiveStock = shipping.getStatus() != Shipping.ShippingStatus.delivered && status == Shipping.ShippingStatus.delivered;
         shipping.setStatus(status);
 
@@ -86,6 +89,9 @@ public class ShippingService {
     public ShippingResponse updateShipping(String id, ShippingRequest request) {
         Shipping shipping = findShippingById(id);
 
+        if (shipping.getStatus() != Shipping.ShippingStatus.inPerparation) {
+            throw new BusinessException("Only Deliveries In Preparation Can Be Modified.");
+        }
         if (request.getCarrierId() != null) {
             Carrier carrier = carrierRepository.findById(request.getCarrierId()).orElseThrow(() -> new ResourceNotFoundException("Carrier Was Not Found."));
             shipping.setCarrierId(carrier.getId());
@@ -99,8 +105,26 @@ public class ShippingService {
         return toResponse(shippingRepository.save(shipping));
     }
     public void deleteShipping(String id) {
-        findShippingById(id);
+        Shipping shipping = findShippingById(id);
+        if (shipping.getStatus() != Shipping.ShippingStatus.inPerparation && shipping.getStatus() != Shipping.ShippingStatus.failed && shipping.getStatus() != Shipping.ShippingStatus.returned) {
+            throw new BusinessException("Only Deliveries In Preparation, Failed, Or Returned Can Be Removed.");
+        }
         shippingRepository.deleteById(id);
+    }
+    private void validateStatusChange(Shipping.ShippingStatus current, Shipping.ShippingStatus next) {
+        if (current == next) {
+            return;
+        }
+        boolean allowed = switch (current) {
+            case inPerparation -> next == Shipping.ShippingStatus.shipped || next == Shipping.ShippingStatus.failed;
+            case shipped -> next == Shipping.ShippingStatus.inTransit || next == Shipping.ShippingStatus.failed || next == Shipping.ShippingStatus.returned;
+            case inTransit -> next == Shipping.ShippingStatus.delivered || next == Shipping.ShippingStatus.failed || next == Shipping.ShippingStatus.returned;
+            case failed -> next == Shipping.ShippingStatus.inPerparation || next == Shipping.ShippingStatus.returned;
+            case delivered, returned -> false;
+        };
+        if (!allowed) {
+            throw new BusinessException("This Delivery Cannot Move To That Status.");
+        }
     }
     private Shipping findShippingById(String id) {
         return shippingRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Shipping With ID " + id + " Was Not Found."));

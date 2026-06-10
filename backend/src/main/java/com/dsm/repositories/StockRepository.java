@@ -13,5 +13,7 @@ public interface StockRepository extends MongoRepository<Stock, String> {
     List<Stock> getStockByProduct(String product);
     @Query("{ 'productRef': ?0 }")
     Optional<Stock> getStockByProductRef(String productRef);
+    @Query("{ 'locationId': ?0 }")
+    List<Stock> getStocksByLocationId(String locationId);
 
 }

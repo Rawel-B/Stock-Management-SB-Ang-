@@ -1,0 +1,32 @@
+<section class="support-page">
+  <article class="support-card">
+    <div>
+      <span>Support</span>
+      <h2>Ticket request</h2>
+    </div>
+  </article>
+
+  <form class="workspace-form support-form" (ngSubmit)="vm.submitSupportTicket()">
+    <h2>New ticket</h2>
+    <label><span>Subject</span><input name="supportSubject" [(ngModel)]="vm.supportForm.subject" required /></label>
+    <label>
+      <span>Category</span>
+      <select name="supportCategory" [(ngModel)]="vm.supportForm.category">
+        <option value="operations">Operations</option>
+        <option value="account">Account</option>
+        <option value="data">Data</option>
+        <option value="technical">Technical</option>
+      </select>
+    </label>
+    <label>
+      <span>Priority</span>
+      <select name="supportPriority" [(ngModel)]="vm.supportForm.priority">
+        <option value="low">Low</option>
+        <option value="normal">Normal</option>
+        <option value="high">High</option>
+      </select>
+    </label>
+    <label><span>Description</span><textarea name="supportDescription" [(ngModel)]="vm.supportForm.description" required></textarea></label>
+    <button class="primary-button" type="submit">Create ticket</button>
+  </form>
+</section>

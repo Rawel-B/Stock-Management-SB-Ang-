@@ -1,0 +1,110 @@
+<section class="workspace-grid">
+  @if (vm.formVisible('deliveries')) {
+    <div class="form-backdrop" (click)="vm.closeForm('deliveries')">
+    <form class="workspace-form modal-form" (ngSubmit)="vm.saveShipping()" (click)="$event.stopPropagation()" novalidate>
+    <div class="form-head">
+      <button class="icon-button" type="button" (click)="vm.closeForm('deliveries')" aria-label="Back" data-tooltip="Back">
+        <i class="pi pi-arrow-left"></i>
+      </button>
+      <h2>{{ vm.shippingEditId ? 'Update Delivery' : 'New Delivery' }}</h2>
+    </div>
+    <label>
+      <span>Order</span>
+      <select name="shippingOrder" [(ngModel)]="vm.shippingForm.orderId" required>
+        <option value="">Select order</option>
+        @for (order of vm.deliveryOrderOptions(); track order.id) {
+          <option [value]="order.id">{{ order.orderNumber }}</option>
+        }
+      </select>
+    </label>
+    <label>
+      <span>Carrier</span>
+      <select name="shippingCarrier" [(ngModel)]="vm.shippingForm.carrierId">
+        <option value="">No carrier</option>
+        @for (carrier of vm.carriers; track carrier.id) {
+          <option [value]="carrier.id">{{ carrier.name }}</option>
+        }
+      </select>
+    </label>
+    <label><span>Delivery date</span><input name="shippingDate" type="datetime-local" [(ngModel)]="vm.shippingForm.deliveryDate" /></label>
+    <label><span>Cost</span><input name="shippingCost" type="number" min="0" step="0.01" [(ngModel)]="vm.shippingForm.cost" /></label>
+    <label><span>Address</span><input name="shippingAddress" [(ngModel)]="vm.shippingForm.shippingAddress" /></label>
+    <label><span>Tracking number</span><input name="shippingTracking" [(ngModel)]="vm.shippingForm.trackingNumber" /></label>
+    <label><span>Remark</span><textarea name="shippingRemark" [(ngModel)]="vm.shippingForm.remark"></textarea></label>
+    <button class="primary-button" type="submit" [disabled]="vm.loading">{{ vm.shippingEditId ? 'Update' : 'Create' }}</button>
+  </form>
+    </div>
+  }
+
+  <section class="workspace-table">
+    <div class="table-head">
+      <h2>Deliveries</h2>
+      <button class="icon-button" type="button" (click)="vm.openCreate('deliveries')" aria-label="New Delivery" data-tooltip="New Delivery">
+        <i class="pi pi-plus"></i>
+      </button>
+    </div>
+    @for (shipping of vm.shippings; track shipping.id) {
+      <div class="row-shell">
+        <article class="table-row phase-row" [class.open-row]="vm.isRowExpanded('deliveries', shipping.id)" (click)="vm.toggleRow('deliveries', shipping.id)">
+          <div>
+            <strong>{{ shipping.orderNumber }}</strong>
+            <span>{{ shipping.carrier?.name || 'No carrier' }}</span>
+          </div>
+          <div class="order-status-stack">
+            <span class="status-pill" [class.cancelled]="shipping.status === 'failed' || shipping.status === 'returned'">{{ vm.shippingStatusLabel(shipping.status) }}</span>
+            <div class="phase-control" aria-label="Delivery status workflow">
+              <div class="phase-track">
+                @for (status of vm.shippingWorkflowStatuses; track status) {
+                  <span class="phase-step" [class.done]="vm.shippingStepDone(shipping.status, status)" [class.active]="shipping.status === status">
+                    <i></i>
+                    <small>{{ vm.shippingStatusLabel(status) }}</small>
+                  </span>
+                }
+              </div>
+              <div class="phase-actions" (click)="$event.stopPropagation()">
+                @if (vm.shippingNextStatus(shipping.status)) {
+                  <button class="phase-action" type="button" (click)="vm.runShippingNext(shipping)">
+                    <i [class]="vm.shippingNextActionIcon(shipping.status)"></i>
+                    <span>{{ vm.shippingNextActionLabel(shipping.status) }}</span>
+                  </button>
+                }
+                @if (vm.shippingCanFail(shipping.status)) {
+                  <button class="phase-action danger-action" type="button" (click)="vm.failShipping(shipping)">
+                    <i class="pi pi-times"></i>
+                    <span>Mark Failed</span>
+                  </button>
+                }
+                @if (vm.shippingCanReturn(shipping.status)) {
+                  <button class="phase-action" type="button" (click)="vm.returnShipping(shipping)">
+                    <i class="pi pi-replay"></i>
+                    <span>Return</span>
+                  </button>
+                }
+              </div>
+            </div>
+          </div>
+          <div class="row-actions" (click)="$event.stopPropagation()">
+            <button class="icon-button" type="button" (click)="vm.editShipping(shipping)" aria-label="Edit delivery" data-tooltip="Edit">
+              <i class="pi pi-pencil"></i>
+            </button>
+            <button class="icon-button" type="button" (click)="vm.deleteShipping(shipping.id)" aria-label="Delete delivery" data-tooltip="Delete">
+              <i class="pi pi-trash"></i>
+            </button>
+          </div>
+          <span class="row-chevron"><i class="pi pi-chevron-down"></i></span>
+        </article>
+        @if (vm.isRowExpanded('deliveries', shipping.id)) {
+          <section class="row-detail">
+            <div><span>Order</span><strong>{{ shipping.orderNumber }}</strong></div>
+            <div><span>Carrier</span><strong>{{ shipping.carrier?.name || 'No carrier' }}</strong></div>
+            <div><span>Status</span><strong>{{ vm.shippingStatusLabel(shipping.status) }}</strong></div>
+            <div><span>Cost</span><strong>{{ shipping.cost ?? 0 | currency }}</strong></div>
+            <div><span>Tracking</span><strong>{{ shipping.trackingNumber || 'No tracking number' }}</strong></div>
+            <div><span>Address</span><strong>{{ shipping.shippingAddress || 'No address' }}</strong></div>
+            <div class="detail-wide"><span>Remark</span><strong>{{ shipping.remark || 'No remark' }}</strong></div>
+          </section>
+        }
+      </div>
+    }
+  </section>
+</section>

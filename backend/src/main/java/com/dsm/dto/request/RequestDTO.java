@@ -14,6 +14,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -65,7 +66,15 @@ public class RequestDTO {
         @NotBlank(message = "the product must be specified.")
         private String product;
         private String productRef;
+        private String locationId;
         @Min(0) private Integer quantity;
+    }
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class LocationRequest {
+        @NotBlank(message = "name must be filled.")
+        private String name;
+        private String code;
+        private String description;
     }
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class OrderRequest {
@@ -110,18 +119,27 @@ public class RequestDTO {
         private long shippingInPerparation;
         private long invoicePending;
     }
-    //====> Authentication
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class SignInRequest {
         @NotBlank private String username;
         @NotBlank private String password;
     }
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
-    public static class SignUpRequest {
-        @NotBlank @Size(min = 3, max = 50) private String username;
-        @NotBlank @Size(min = 6) private String password;
-        @NotBlank private String name;
-        @Email @NotBlank private String email;
+    public static class ForgotPasswordRequest {
+        @Email @NotBlank @Size(max = 120) @Pattern(regexp = "^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$") private String email;
     }
-    //====>
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class SignUpRequest {
+        @NotBlank @Size(min = 3, max = 30) @Pattern(regexp = "^[a-zA-Z0-9._-]+$") private String username;
+        @NotBlank @Size(min = 6, max = 72) private String password;
+        @NotBlank @Size(min = 2, max = 80) private String name;
+        @Email @NotBlank @Size(max = 120) @Pattern(regexp = "^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$") private String email;
+    }
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class ProfileRequest {
+        @NotBlank @Size(min = 3, max = 30) @Pattern(regexp = "^[a-zA-Z0-9._-]+$") private String username;
+        @NotBlank @Size(min = 2, max = 80) private String name;
+        @Email @NotBlank @Size(max = 120) @Pattern(regexp = "^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$") private String email;
+        @Size(min = 6, max = 72) private String password;
+    }
 }

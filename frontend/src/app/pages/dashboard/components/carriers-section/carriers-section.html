@@ -1,0 +1,61 @@
+<section class="workspace-grid">
+  @if (vm.formVisible('carriers')) {
+    <div class="form-backdrop" (click)="vm.closeForm('carriers')">
+    <form class="workspace-form modal-form" (ngSubmit)="vm.saveCarrier()" (click)="$event.stopPropagation()" novalidate>
+      <div class="form-head">
+        <button class="icon-button" type="button" (click)="vm.closeForm('carriers')" aria-label="Back" data-tooltip="Back">
+          <i class="pi pi-arrow-left"></i>
+        </button>
+        <h2>{{ vm.carrierEditId ? 'Update Carrier' : 'New Carrier' }}</h2>
+      </div>
+      <label><span>Name</span><input name="carrierName" [(ngModel)]="vm.carrierForm.name" required /></label>
+      <label><span>Phone</span><input name="carrierPhone" [(ngModel)]="vm.carrierForm.phone" /></label>
+      <label><span>Rating</span><input name="carrierRating" type="number" min="0" max="5" step="0.1" [(ngModel)]="vm.carrierForm.rating" /></label>
+      <label class="active-toggle">
+        <input name="carrierActive" type="checkbox" [(ngModel)]="vm.carrierForm.isActive" />
+        <span></span>
+        <strong>Active</strong>
+      </label>
+      <button class="primary-button" type="submit" [disabled]="vm.loading">{{ vm.carrierEditId ? 'Update' : 'Create' }}</button>
+    </form>
+    </div>
+  }
+
+  <section class="workspace-table">
+    <div class="table-head">
+      <h2>Carriers</h2>
+      <button class="icon-button" type="button" (click)="vm.openCreate('carriers')" aria-label="New Carrier" data-tooltip="New Carrier">
+        <i class="pi pi-plus"></i>
+      </button>
+    </div>
+    @for (carrier of vm.carriers; track carrier.id) {
+      <div class="row-shell">
+        <article class="table-row" [class.open-row]="vm.isRowExpanded('carriers', carrier.id)" (click)="vm.toggleRow('carriers', carrier.id)">
+          <div>
+            <strong>{{ carrier.name }}</strong>
+            <span>{{ carrier.phone || 'No phone' }}</span>
+          </div>
+          <span>{{ carrier.rating || 0 }}/5</span>
+          <div class="row-actions" (click)="$event.stopPropagation()">
+            <button class="icon-button" type="button" (click)="vm.editCarrier(carrier)" aria-label="Edit carrier" data-tooltip="Edit">
+              <i class="pi pi-pencil"></i>
+            </button>
+            <button class="icon-button" type="button" (click)="vm.deleteCarrier(carrier.id)" aria-label="Delete carrier" data-tooltip="Delete">
+              <i class="pi pi-trash"></i>
+            </button>
+          </div>
+          <span class="row-chevron"><i class="pi pi-chevron-down"></i></span>
+        </article>
+        @if (vm.isRowExpanded('carriers', carrier.id)) {
+          <section class="row-detail">
+            <div><span>Name</span><strong>{{ carrier.name }}</strong></div>
+            <div><span>Phone</span><strong>{{ carrier.phone || 'No phone' }}</strong></div>
+            <div><span>Rating</span><strong>{{ carrier.rating || 0 }}/5</strong></div>
+            <div><span>Status</span><strong>{{ carrier.isActive ? 'Active' : 'Inactive' }}</strong></div>
+            <div><span>Deliveries</span><strong>{{ carrier.shippingsCount }}</strong></div>
+          </section>
+        }
+      </div>
+    }
+  </section>
+</section>
