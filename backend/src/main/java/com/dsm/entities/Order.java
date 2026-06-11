@@ -33,7 +33,7 @@ public class Order {
     private String orderNumber;
     private String remark;
     @Builder.Default
-    private List<Product> orderLines = new ArrayList<>();
+    private List<Product> products = new ArrayList<>();
     @Builder.Default
     private List<String> shippingIds = new ArrayList<>();
     @Builder.Default

@@ -12,7 +12,7 @@
         @if (!vm.supportEditId) {
           <label><span>Subject</span><input name="supportSubject" [(ngModel)]="vm.supportForm.subject" required /></label>
           <label>
-            <span>Category</span>
+            <span>Type</span>
             <select name="supportCategory" [(ngModel)]="vm.supportForm.category">
               @for (category of vm.supportCategories; track category) {
                 <option [value]="category">{{ vm.displayLabel(category) }}</option>
@@ -69,11 +69,17 @@
       <h2>Tickets</h2>
       <div class="table-filters">
         <input name="supportFilter" placeholder="Search tickets" [(ngModel)]="vm.filters.support" (keyup.enter)="vm.applyFilters()" />
+        <select name="supportStatusFilter" [(ngModel)]="vm.filters.supportStatus">
+          <option value="">All</option>
+          @for (status of vm.supportStatuses; track status) {
+            <option [value]="status">{{ vm.displayLabel(status) }}</option>
+          }
+        </select>
         <button class="icon-button" type="button" (click)="vm.applyFilters()" aria-label="Search tickets" data-tooltip="Search">
           <i class="pi pi-search"></i>
         </button>
-        @if (vm.filters.support) {
-          <button class="icon-button" type="button" (click)="vm.clearFilter('support')" aria-label="Clear support filter" data-tooltip="Clear">
+        @if (vm.filters.support || vm.filters.supportStatus) {
+          <button class="icon-button" type="button" (click)="vm.clearFilter('support'); vm.clearFilter('supportStatus')" aria-label="Clear support filter" data-tooltip="Clear">
             <i class="pi pi-times"></i>
           </button>
         }
@@ -106,6 +112,7 @@
           <section class="row-detail ticket-detail">
             <div><span>Subject</span><strong>{{ ticket.subject }}</strong></div>
             <div><span>Requester</span><strong>{{ ticket.requesterEmail || ticket.requesterName || 'No requester' }}</strong></div>
+            <div><span>Type</span><strong>{{ vm.displayLabel(ticket.category) }}</strong></div>
             <div><span>Assigned To</span><strong>{{ ticket.assignedUserName || 'Unassigned' }}</strong></div>
             <div><span>Status</span><strong>{{ vm.displayLabel(ticket.status) }}</strong></div>
             <div><span>Priority</span><strong>{{ vm.displayLabel(ticket.priority) }}</strong></div>

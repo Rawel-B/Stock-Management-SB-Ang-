@@ -3,7 +3,7 @@ export type ShippingStatus = 'inPerparation' | 'shipped' | 'inTransit' | 'delive
 export type InvoiceStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'refunded' | 'cancelled';
 export type InvoicingMethod = 'creditCard' | 'debitCard' | 'bankTransfer' | 'Check' | 'Cash' | 'paypal' | 'stripe' | 'other';
 export type UserRole = 'administrator' | 'manager' | 'user';
-export type SupportCategory = 'operations' | 'account' | 'data' | 'technical' | 'access';
+export type SupportCategory = 'operations' | 'account' | 'data' | 'technical' | 'access' | 'accountActivation';
 export type SupportPriority = 'low' | 'normal' | 'high' | 'urgent';
 export type SupportStatus = 'open' | 'inProgress' | 'resolved' | 'closed';
 

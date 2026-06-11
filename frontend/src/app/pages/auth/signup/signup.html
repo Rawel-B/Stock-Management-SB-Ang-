@@ -43,13 +43,12 @@
         <p class="field-error">Password must contain 6 to 72 characters.</p>
       }
 
-      <label class="checkbox-label">
-        <input type="checkbox" formControlName="remember" />
-        <span>Remember me on this device</span>
-      </label>
-
       @if (error()) {
         <p class="form-error">{{ error() }}</p>
+      }
+
+      @if (message()) {
+        <p class="form-success">{{ message() }}</p>
       }
 
       <button class="primary-button" type="submit" [disabled]="loading()">

@@ -36,7 +36,7 @@ public class SupportTicket {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    public enum Category { operations, account, data, technical, access }
+    public enum Category { operations, account, data, technical, access, accountActivation }
     public enum Priority { low, normal, high, urgent }
     public enum Status { open, inProgress, resolved, closed }
 }

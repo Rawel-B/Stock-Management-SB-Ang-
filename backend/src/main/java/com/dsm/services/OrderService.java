@@ -96,7 +96,7 @@ public class OrderService {
         order.setStatus(Order.OrderStatus.validated);
         return toResponse(orderRepository.save(order));
     }
-    public OrderResponse updateStatut(String id, Order.OrderStatus status) {
+    public OrderResponse updateStatus(String id, Order.OrderStatus status) {
         Order order = findById(id);
 
         if (order.getStatus() == status) {

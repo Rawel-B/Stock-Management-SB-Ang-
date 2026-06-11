@@ -69,8 +69,8 @@ public class OrderController {
     }
     @PatchMapping("/{id}/setOrderStatus")
     @Operation(summary = "Set Order Status")
-    public ResponseEntity<OrderResponse> setOrderStatus(@PathVariable String id, @RequestParam Order.OrderStatus statut) {
-        return ResponseEntity.ok(orderService.updateStatut(id, statut));
+    public ResponseEntity<OrderResponse> setOrderStatus(@PathVariable String id, @RequestParam Order.OrderStatus status) {
+        return ResponseEntity.ok(orderService.updateStatus(id, status));
     }
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete an Order")

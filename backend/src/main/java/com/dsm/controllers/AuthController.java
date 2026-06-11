@@ -11,6 +11,7 @@ import com.dsm.exception.*;
 import com.dsm.repositories.*;
 import com.dsm.security.JwtUtils;
 import com.dsm.security.UserDetailsServiceImpl;
+import com.dsm.services.SupportTicketService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -35,6 +36,7 @@ public class AuthController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserDetailsServiceImpl userDetailsService;
+    private final SupportTicketService supportTicketService;
 
     @PostMapping("/signin")
     @Operation(summary = "SignIn")
@@ -48,7 +50,7 @@ public class AuthController {
     }
     @PostMapping("/signup")
     @Operation(summary = "SignUp")
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody SignUpRequest request) {
+    public ResponseEntity<MessageResponse> register(@Valid @RequestBody SignUpRequest request) {
         String username = request.getUsername().trim();
         String email = request.getEmail().trim().toLowerCase();
         String name = request.getName().trim();
@@ -64,11 +66,10 @@ public class AuthController {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .name(name)
                 .email(email)
-                .role(User.Role.user).isActive(true).build();
-        userRepository.save(user);
-        Authentication auth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, request.getPassword()));
-        String token = jwtUtils.generateToken((UserDetails) auth.getPrincipal());
-        return ResponseEntity.ok(authResponse(user, token));
+                .role(User.Role.user).isActive(false).build();
+        user = userRepository.save(user);
+        supportTicketService.createAccountActivationTicket(user);
+        return ResponseEntity.ok(MessageResponse.builder().message("Account request sent. Ask your administrator to activate your account.").build());
     }
     @GetMapping("/me")
     @Operation(summary = "Current User")

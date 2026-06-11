@@ -118,7 +118,7 @@ export class Workspace {
   }
 
   setOrderStatus(id: string, status: OrderStatus) {
-    return this.api.patch<OrderResponse>(`/orders/${id}/setOrderStatus?statut=${status}`, {});
+    return this.api.patch<OrderResponse>(`/orders/${id}/setOrderStatus?status=${status}`, {});
   }
 
   deleteOrder(id: string) {
@@ -135,7 +135,7 @@ export class Workspace {
   }
 
   setShippingStatus(id: string, status: ShippingStatus) {
-    return this.api.patch<ShippingResponse>(`/shippings/${id}/status?statut=${status}`, {});
+    return this.api.patch<ShippingResponse>(`/shippings/${id}/status?status=${status}`, {});
   }
 
   deleteShipping(id: string) {

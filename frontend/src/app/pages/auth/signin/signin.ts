@@ -28,6 +28,7 @@ export class Signin {
   });
   readonly ticketForm = this.fb.nonNullable.group({
     email: ['', [Validators.required, AuthValidators.notBlank, AuthValidators.email, Validators.maxLength(120)]],
+    category: ['access'],
     description: ['', [Validators.required, AuthValidators.notBlank, Validators.minLength(10)]]
   });
 
@@ -63,7 +64,7 @@ export class Signin {
       subject: 'Sign In Access',
       description: value.description.trim(),
       email: value.email.trim().toLowerCase(),
-      category: 'access'
+      category: value.category as 'access' | 'accountActivation'
     }).pipe(finalize(() => this.ticketLoading.set(false))).subscribe({
       next: () => {
         this.ticketMessage.set('Ticket sent.');

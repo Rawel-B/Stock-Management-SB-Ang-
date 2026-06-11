@@ -13,11 +13,11 @@ import com.dsm.entities.Order;
 
 public interface OrderRepository extends MongoRepository<Order, String> {
     @Query("{ 'customerId': ?0 }")
-    List<Order> getOrdersByCustomerId(String clientId);
+    List<Order> getOrdersByCustomerId(String customerId);
     @Query("{ 'supplierId': ?0 }")
     List<Order> getOrdersBySupplierId(String supplierId);
     @Query("{ 'customerId': ?0 }")
-    Page<Order> getOrdersByCustomerIdAndPage(String clientId, Pageable pageable);
+    Page<Order> getOrdersByCustomerIdAndPage(String customerId, Pageable pageable);
     @Query("{ 'status': ?0 }")
     List<Order> getOrdersByStatus(Order.OrderStatus orderStatus);
     @Query(value = "{ 'status': ?0 }", count = true)

@@ -15,7 +15,7 @@ import java.math.BigDecimal;
 public class DashboardService {
     private final OrderRepository orderRepository;
     private final CustomerRepository customerRepository;
-    private final CarrierRepository transporteurRepository;
+    private final CarrierRepository carrierRepository;
     private final SupplierRepository supplierRepository;
     private final StockRepository stockRepository;
     private final ShippingRepository shippingRepository;
@@ -31,7 +31,7 @@ public class DashboardService {
                 .ordersCancelled(orderRepository.getOrdersCountByStatus(Order.OrderStatus.cancelled))
                 .revenue(orderRepository.findAll().stream().map(Order::getTotalAmount).filter(amount -> amount != null).reduce(BigDecimal.ZERO, BigDecimal::add).doubleValue())
                 .totalCustomers(customerRepository.count())
-                .totalCarriers(transporteurRepository.count())
+                .totalCarriers(carrierRepository.count())
                 .totalSuppliers(supplierRepository.count())
                 .totalStocks(stockRepository.count())
                 .shippingInPerparation(shippingRepository.getShippingsByStatus(Shipping.ShippingStatus.inTransit).size() + shippingRepository.getShippingsByStatus(Shipping.ShippingStatus.shipped).size())

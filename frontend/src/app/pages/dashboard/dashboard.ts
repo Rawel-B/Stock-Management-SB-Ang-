@@ -57,7 +57,7 @@ type Confirmation = { title: string; message: string; confirmText: string; actio
 type NavItem = { id: Section; label: string; icon: string };
 type NavGroup = { label: string; items: NavItem[] };
 type Toast = { type: 'success' | 'error'; message: string };
-type FilterKey = 'customers' | 'suppliers' | 'carriers' | 'carrierStatus' | 'stock' | 'locations' | 'orders' | 'orderStatus' | 'shippingStatus' | 'invoiceStatus' | 'invoiceMethod' | 'users' | 'support';
+type FilterKey = 'customers' | 'suppliers' | 'carriers' | 'carrierStatus' | 'stock' | 'locations' | 'orders' | 'orderStatus' | 'shippingStatus' | 'invoiceStatus' | 'invoiceMethod' | 'users' | 'support' | 'supportStatus';
 type DashboardFilterKey = 'year' | 'orderStatus' | 'shippingStatus' | 'invoiceStatus';
 type WorkspaceData = {
   stats: DashboardStats;
@@ -164,7 +164,7 @@ export class Dashboard implements OnInit, OnDestroy {
   readonly invoiceWorkflowStatuses: InvoiceStatus[] = ['pending', 'processing', 'completed'];
   readonly invoicingMethods: InvoicingMethod[] = ['creditCard', 'debitCard', 'bankTransfer', 'Check', 'Cash', 'paypal', 'stripe', 'other'];
   readonly userRoles: UserRole[] = ['administrator', 'manager', 'user'];
-  readonly supportCategories: SupportCategory[] = ['operations', 'account', 'data', 'technical', 'access'];
+  readonly supportCategories: SupportCategory[] = ['operations', 'account', 'data', 'technical', 'access', 'accountActivation'];
   readonly supportPriorities: SupportPriority[] = ['low', 'normal', 'high', 'urgent'];
   readonly supportStatuses: SupportStatus[] = ['open', 'inProgress', 'resolved', 'closed'];
   activeSection: Section = 'overview';
@@ -217,7 +217,8 @@ export class Dashboard implements OnInit, OnDestroy {
     invoiceStatus: '',
     invoiceMethod: '',
     users: '',
-    support: ''
+    support: '',
+    supportStatus: ''
   };
   dashboardFilters = {
     year: '',
@@ -1684,12 +1685,18 @@ export class Dashboard implements OnInit, OnDestroy {
 
   filteredSupportTickets() {
     const criteria = this.filters.support.trim().toLowerCase();
+    const status = this.filters.supportStatus;
 
-    return this.supportTickets.filter(ticket => !criteria
-      || ticket.subject.toLowerCase().includes(criteria)
-      || (ticket.requesterName ?? '').toLowerCase().includes(criteria)
-      || (ticket.requesterEmail ?? '').toLowerCase().includes(criteria)
-      || this.displayLabel(ticket.status).toLowerCase().includes(criteria));
+    return this.supportTickets.filter(ticket => {
+      const matchesCriteria = !criteria
+        || ticket.subject.toLowerCase().includes(criteria)
+        || (ticket.requesterName ?? '').toLowerCase().includes(criteria)
+        || (ticket.requesterEmail ?? '').toLowerCase().includes(criteria)
+        || this.displayLabel(ticket.status).toLowerCase().includes(criteria);
+      const matchesStatus = !status || ticket.status === status;
+
+      return matchesCriteria && matchesStatus;
+    });
   }
 
   supportAssignableUsers() {

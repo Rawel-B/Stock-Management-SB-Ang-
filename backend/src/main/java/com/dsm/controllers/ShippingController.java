@@ -46,8 +46,8 @@ public class ShippingController {
     }
     @PatchMapping("/{id}/status")
     @Operation(summary = "Update a Shipping's Status")
-    public ResponseEntity<ShippingResponse> setShippingStatus(@PathVariable String id, @RequestParam Shipping.ShippingStatus statut) {
-        return ResponseEntity.ok(shippingService.updateShippingStatus(id, statut));
+    public ResponseEntity<ShippingResponse> setShippingStatus(@PathVariable String id, @RequestParam Shipping.ShippingStatus status) {
+        return ResponseEntity.ok(shippingService.updateShippingStatus(id, status));
     }
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete a Shipping")

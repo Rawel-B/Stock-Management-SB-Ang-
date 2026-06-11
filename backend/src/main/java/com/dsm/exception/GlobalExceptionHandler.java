@@ -3,6 +3,7 @@ package com.dsm.exception;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -33,6 +34,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ErrorResponse> handleAuthentication(AuthenticationException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse(HttpStatus.UNAUTHORIZED.value(), "Invalid username or password.", LocalDateTime.now()));
+    }
+    @ExceptionHandler(DisabledException.class)
+    public ResponseEntity<ErrorResponse> handleDisabled(DisabledException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse(HttpStatus.UNAUTHORIZED.value(), "Your account is inactive. Ask your administrator to activate it.", LocalDateTime.now()));
     }
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ValidationErrorResponse> handleValidation(MethodArgumentNotValidException ex) {

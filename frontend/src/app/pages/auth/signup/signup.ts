@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { Auth } from '../../../core/services/auth';
 import { AuthValidators } from '../../../core/validators/auth-validators';
@@ -14,19 +14,19 @@ import { AuthValidators } from '../../../core/validators/auth-validators';
 export class Signup {
   private readonly fb = inject(FormBuilder);
   private readonly auth = inject(Auth);
-  private readonly router = inject(Router);
   readonly loading = signal(false);
   readonly error = signal('');
+  readonly message = signal('');
   readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required, AuthValidators.notBlank, Validators.minLength(2), Validators.maxLength(80)]],
     email: ['', [Validators.required, AuthValidators.notBlank, AuthValidators.email, Validators.maxLength(120)]],
     username: ['', [Validators.required, AuthValidators.notBlank, Validators.minLength(3), Validators.maxLength(30), AuthValidators.username]],
-    password: ['', [Validators.required, AuthValidators.notBlank, Validators.minLength(6), Validators.maxLength(72)]],
-    remember: [true]
+    password: ['', [Validators.required, AuthValidators.notBlank, Validators.minLength(6), Validators.maxLength(72)]]
   });
 
   submit() {
     this.error.set('');
+    this.message.set('');
 
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -40,10 +40,13 @@ export class Signup {
       email: value.email.trim().toLowerCase(),
       username: value.username.trim(),
       password: value.password
-    }, value.remember)
+    })
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
-        next: () => this.router.navigate(['/dashboard']),
+        next: response => {
+          this.message.set(response.message);
+          this.form.reset();
+        },
         error: error => this.error.set(this.readError(error))
       });
   }

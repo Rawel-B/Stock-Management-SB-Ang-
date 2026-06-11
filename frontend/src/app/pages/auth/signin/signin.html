@@ -72,6 +72,13 @@
           <input type="email" formControlName="email" autocomplete="email" />
         </label>
         <label>
+          <span>Type</span>
+          <select formControlName="category">
+            <option value="access">Access</option>
+            <option value="accountActivation">Account Activation</option>
+          </select>
+        </label>
+        <label>
           <span>Issue</span>
           <textarea formControlName="description"></textarea>
         </label>

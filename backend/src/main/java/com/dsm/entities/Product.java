@@ -21,7 +21,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Document(collection = "orderlines")
+@Document(collection = "products")
 public class Product {
     @Id
     private String id;

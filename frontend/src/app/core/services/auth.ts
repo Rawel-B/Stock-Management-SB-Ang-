@@ -25,8 +25,8 @@ export class Auth {
     return this.api.post<AuthResponse>('/auth/signin', request).pipe(tap(response => this.saveSession(response, remember)));
   }
 
-  signUp(request: SignUpRequest, remember: boolean) {
-    return this.api.post<AuthResponse>('/auth/signup', request).pipe(tap(response => this.saveSession(response, remember)));
+  signUp(request: SignUpRequest) {
+    return this.api.post<MessageResponse>('/auth/signup', request);
   }
 
   forgotPassword(request: ForgotPasswordRequest) {

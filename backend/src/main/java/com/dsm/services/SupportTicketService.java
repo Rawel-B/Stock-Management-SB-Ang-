@@ -58,6 +58,19 @@ public class SupportTicketService {
 
         return toResponse(supportTicketRepository.save(ticket));
     }
+    public SupportTicketResponse createAccountActivationTicket(User user) {
+        SupportTicket ticket = SupportTicket.builder()
+                .subject("Account Activation")
+                .description("Activate user account: " + user.getUsername())
+                .category(SupportTicket.Category.accountActivation)
+                .priority(SupportTicket.Priority.high)
+                .requesterId(user.getId())
+                .requesterName(user.getName())
+                .requesterEmail(user.getEmail())
+                .build();
+
+        return toResponse(supportTicketRepository.save(ticket));
+    }
     public SupportTicketResponse updateTicket(String id, SupportTicketStatusRequest request) {
         SupportTicket ticket = findById(id);
         ticket.setStatus(request.getStatus());

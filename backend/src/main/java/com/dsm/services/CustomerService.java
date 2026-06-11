@@ -24,14 +24,14 @@ public class CustomerService {
             throw new DuplicateResourceException("a Customer With This Email Already Exists.");
         }
 
-        Customer client = Customer.builder()
+        Customer customer = Customer.builder()
                 .name(request.getName())
                 .email(request.getEmail())
                 .address(request.getAddress())
                 .phone(request.getPhone())
                 .build();
 
-        return toResponse(customerRepository.save(client));
+        return toResponse(customerRepository.save(customer));
     }
     public CustomerResponse getCustomerById(String id) {
         return toResponse(findById(id));
@@ -46,17 +46,17 @@ public class CustomerService {
         return customerRepository.getCustomerByName(name).stream().map(this::toResponse).collect(Collectors.toList());
     }
     public CustomerResponse updateCustomer(String id, CustomerRequest request) {
-        Customer client = findById(id);
+        Customer customer = findById(id);
 
-        if (!client.getEmail().equals(request.getEmail()) && customerRepository.checkEmailValidity(request.getEmail())) {
+        if (!customer.getEmail().equals(request.getEmail()) && customerRepository.checkEmailValidity(request.getEmail())) {
             throw new DuplicateResourceException("a Customer With This Email Already Exists.");
         }
 
-        client.setName(request.getName());
-        client.setEmail(request.getEmail());
-        client.setAddress(request.getAddress());
-        client.setPhone(request.getPhone());
-        return toResponse(customerRepository.save(client));
+        customer.setName(request.getName());
+        customer.setEmail(request.getEmail());
+        customer.setAddress(request.getAddress());
+        customer.setPhone(request.getPhone());
+        return toResponse(customerRepository.save(customer));
     }
     public void deleteCustomer(String id) {
         findById(id);
