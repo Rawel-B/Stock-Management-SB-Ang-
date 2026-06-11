@@ -173,33 +173,6 @@ Stop containers:
 docker compose down
 ```
 
-## Project Structure
-
-```txt
-DeliveryStockManagement
-├── backend
-│   ├── src/main/java/com/dsm
-│   │   ├── backend
-│   │   ├── config
-│   │   ├── controllers
-│   │   ├── dto
-│   │   ├── entities
-│   │   ├── exception
-│   │   ├── repositories
-│   │   ├── security
-│   │   └── services
-│   ├── src/main/resources
-│   ├── Dockerfile
-│   └── pom.xml
-├── frontend
-│   ├── src/app
-│   │   ├── core
-│   │   └── pages
-│   ├── Dockerfile
-│   └── package.json
-└── docker-compose.yml
-```
-
 ## Security
 
 - JWT is used for authenticated requests.
