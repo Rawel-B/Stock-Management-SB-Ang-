@@ -1441,13 +1441,13 @@ export class Dashboard implements OnInit, OnDestroy {
   }
 
   saveOrder() {
-    if (!this.orderForm.customerId || !this.orderForm.products.length) {
-      this.showError('Select a customer and add at least one product.');
+    if (!this.orderForm.customerId || !this.orderForm.supplierId || !this.orderForm.products.length) {
+      this.showError('Select a customer, select a supplier, and add at least one product.');
       return;
     }
     const request: OrderRequest = {
       customerId: this.orderForm.customerId,
-      supplierId: this.orderForm.supplierId || undefined,
+      supplierId: this.orderForm.supplierId,
       remark: this.orderForm.remark?.trim(),
       products: this.orderForm.products
     };
@@ -1464,7 +1464,7 @@ export class Dashboard implements OnInit, OnDestroy {
         this.orderEditId = response.id;
         this.orderForm = {
           customerId: response.customer.id,
-          supplierId: response.supplier?.id,
+          supplierId: response.supplier?.id ?? '',
           remark: response.remark,
           products: response.products.map(product => ({
             product: product.product,

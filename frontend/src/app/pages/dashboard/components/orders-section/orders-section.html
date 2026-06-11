@@ -19,8 +19,8 @@
     </label>
     <label>
       <span>Supplier</span>
-      <select name="orderSupplier" [(ngModel)]="vm.orderForm.supplierId">
-        <option value="">No supplier</option>
+      <select name="orderSupplier" [(ngModel)]="vm.orderForm.supplierId" required>
+        <option value="">Select supplier</option>
         @for (supplier of vm.activeSuppliers(); track supplier.id) {
           <option [value]="supplier.id">{{ supplier.name }}</option>
         }

@@ -84,7 +84,7 @@
     </div>
     @for (ticket of vm.filteredSupportTickets(); track ticket.id) {
       <div class="row-shell">
-        <article class="table-row" [class.open-row]="vm.isRowExpanded('support', ticket.id)" (click)="vm.toggleRow('support', ticket.id)">
+        <article class="table-row ticket-row" [class.open-row]="vm.isRowExpanded('support', ticket.id)" (click)="vm.toggleRow('support', ticket.id)">
           <div>
             <strong>{{ ticket.subject }}</strong>
             <span>{{ ticket.requesterEmail || ticket.requesterName || 'No requester' }}</span>

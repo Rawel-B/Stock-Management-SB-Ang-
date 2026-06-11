@@ -1,57 +1,31 @@
 <main class="auth-page signin-page">
   <section class="signin-panel" aria-label="DSM">
-    <div class="signin-brand">
-      <div class="brand-mark">
-        <span>DSM</span>
+    <div class="signin-brand-wrap">
+      <div class="signin-brand">
+        <img class="brand-logo main-brand-logo" src="/logo-full.svg" alt="Delivery Stock Management" />
       </div>
-      <div>
-        <strong>DSM</strong>
-        <span>Delivery Stock Management</span>
-      </div>
-    </div>
 
-    <div class="signin-feature-list">
-      <div>
-        <i class="pi pi-shopping-cart"></i>
+      <div class="signin-status">
         <div>
-          <strong>Orders</strong>
-          <span>Approval and status flow.</span>
+          <span>Orders</span>
+          <strong>Approval Flow</strong>
         </div>
-      </div>
-      <div>
-        <i class="pi pi-truck"></i>
         <div>
-          <strong>Deliveries</strong>
-          <span>Tracking and carrier control.</span>
+          <span>Stock</span>
+          <strong>Location Control</strong>
         </div>
-      </div>
-      <div>
-        <i class="pi pi-file"></i>
         <div>
-          <strong>Invoices</strong>
-          <span>Payment records in one place.</span>
-        </div>
-      </div>
-      <div>
-        <i class="pi pi-box"></i>
-        <div>
-          <strong>Stock</strong>
-          <span>Inventory updates with orders.</span>
+          <span>Delivery</span>
+          <strong>Live Tracking</strong>
         </div>
       </div>
     </div>
   </section>
 
   <section class="auth-card signin-card" aria-label="Sign in form">
-    <div class="auth-card-brand signin-card-brand">
-      <div class="brand-mark small-brand-mark">
-        <span>DSM</span>
-      </div>
-      <strong>DSM</strong>
-    </div>
-
     <div class="auth-card-header">
-      <h2>Welcome back</h2>
+      <span>Workspace</span>
+      <h2>Sign in</h2>
     </div>
 
     <form [formGroup]="form" (ngSubmit)="submit()" class="auth-form">

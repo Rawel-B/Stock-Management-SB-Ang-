@@ -46,7 +46,7 @@
     </div>
     @for (user of vm.filteredUsers(); track user.id) {
       <div class="row-shell">
-        <article class="table-row" [class.open-row]="vm.isRowExpanded('users', user.id)" (click)="vm.toggleRow('users', user.id)">
+        <article class="table-row user-row" [class.open-row]="vm.isRowExpanded('users', user.id)" (click)="vm.toggleRow('users', user.id)">
           <div>
             <strong>{{ user.name }}</strong>
             <span>{{ user.email }}</span>

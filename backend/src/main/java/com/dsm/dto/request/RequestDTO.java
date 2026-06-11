@@ -82,6 +82,7 @@ public class RequestDTO {
     public static class OrderRequest {
         @NotNull(message = "the customer must be specified.")
         private String customerId;
+        @NotBlank(message = "the supplier must be specified.")
         private String supplierId;
         private String remark;
         @Valid

@@ -89,7 +89,7 @@ export interface ProductResponse extends ProductRequest {
 
 export interface OrderRequest {
   customerId: string;
-  supplierId?: string;
+  supplierId: string;
   remark?: string;
   products: ProductRequest[];
 }

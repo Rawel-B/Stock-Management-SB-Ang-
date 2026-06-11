@@ -190,6 +190,9 @@ public class OrderService {
         return supplierRepository.findById(supplierId).orElseThrow(() -> new ResourceNotFoundException("Supplier With " + supplierId + " Was Not Found."));
     }
     private Supplier findUsableSupplier(String supplierId) {
+        if (supplierId == null || supplierId.isBlank()) {
+            throw new BusinessException("Supplier Must Be Specified.");
+        }
         Supplier supplier = findSupplier(supplierId);
         if (supplier != null && !Boolean.TRUE.equals(supplier.getIsActive())) {
             throw new BusinessException("Inactive Suppliers Cannot Be Assigned To Orders.");
