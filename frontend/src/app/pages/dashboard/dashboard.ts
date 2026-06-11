@@ -494,15 +494,15 @@ export class Dashboard implements OnInit, OnDestroy {
   }
 
   dashboardOrderStatusOptions() {
-    return this.matchingStatuses(this.orderStatuses, this.dashboardOrderScope('orderStatus').map(order => order.status), this.dashboardFilters.orderStatus);
+    return this.orderStatuses;
   }
 
   dashboardShippingStatusOptions() {
-    return this.matchingStatuses(this.shippingStatuses, this.dashboardShippingScope('shippingStatus').map(shipping => shipping.status), this.dashboardFilters.shippingStatus);
+    return this.shippingStatuses;
   }
 
   dashboardInvoiceStatusOptions() {
-    return this.matchingStatuses(this.invoiceStatuses, this.dashboardInvoiceScope('invoiceStatus').map(invoice => invoice.invoiceStatus), this.dashboardFilters.invoiceStatus);
+    return this.invoiceStatuses;
   }
 
   dashboardCards() {
@@ -626,16 +626,10 @@ export class Dashboard implements OnInit, OnDestroy {
   }
 
   dashboardYears() {
-    const orders = this.dashboardOrderScope('year');
-    const shippings = this.dashboardShippingScope('year');
-    const invoices = this.dashboardInvoiceScope('year');
-    const years = [
-      ...orders.map(order => new Date(order.orderDate).getFullYear()),
-      ...shippings.map(shipping => new Date(shipping.deliveryDate || shipping.createdAt).getFullYear()),
-      ...invoices.map(invoice => new Date(invoice.invoicingDate).getFullYear())
-    ].filter(year => !Number.isNaN(year));
+    const currentYear = new Date().getFullYear();
+    const firstYear = 2020;
 
-    return [...new Set(years)].sort((first, second) => second - first);
+    return Array.from({ length: currentYear - firstYear + 1 }, (_, index) => currentYear - index);
   }
 
   dashboardSelectedYear() {
