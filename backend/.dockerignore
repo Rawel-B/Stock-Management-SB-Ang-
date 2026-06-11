@@ -1,0 +1,8 @@
+target
+.mvn
+*.log
+backend.run.log
+backend.run.err.log
+.git
+.idea
+.vscode
