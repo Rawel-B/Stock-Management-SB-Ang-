@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,11 +32,13 @@ public class OrderService {
     private final ShippingRepository shippingRepository;
     private final InvoiceRepository invoiceRepository;
     private final SupplierRepository supplierRepository;
+    private final StockRepository stockRepository;
     private final CustomerService customerService;
 
     public OrderResponse addOrder(OrderRequest request) {
         Customer customer = customerService.findById(request.getCustomerId());
         Supplier supplier = findUsableSupplier(request.getSupplierId());
+        validateProductsFromStock(request.getProducts());
         Order order = Order.builder()
                 .customerId(customer.getId())
                 .supplierId(supplier != null ? supplier.getId() : null)
@@ -136,6 +139,7 @@ public class OrderService {
 
         Customer customer = customerService.findById(request.getCustomerId());
         Supplier supplier = findUsableSupplier(request.getSupplierId());
+        validateProductsFromStock(request.getProducts());
         order.setCustomerId(customer.getId());
         order.setSupplierId(supplier != null ? supplier.getId() : null);
         order.setRemark(request.getRemark());
@@ -198,6 +202,28 @@ public class OrderService {
             throw new BusinessException("Inactive Suppliers Cannot Be Assigned To Orders.");
         }
         return supplier;
+    }
+    private void validateProductsFromStock(List<ProductRequest> products) {
+        if (products == null || products.isEmpty()) {
+            throw new BusinessException("At Least One Product Must Be Added.");
+        }
+        List<Stock> stocks = stockRepository.findAll();
+        Map<String, Integer> available = stocks.stream()
+                .filter(stock -> stock.getProduct() != null && !stock.getProduct().isBlank())
+                .collect(Collectors.groupingBy(stock -> stock.getProduct().trim().toLowerCase(), Collectors.summingInt(stock -> stock.getQuantity() != null ? stock.getQuantity() : 0)));
+        Map<String, Integer> requested = products.stream()
+                .filter(product -> product.getProduct() != null && !product.getProduct().isBlank())
+                .collect(Collectors.groupingBy(product -> product.getProduct().trim().toLowerCase(), Collectors.summingInt(product -> product.getQuantity() != null ? product.getQuantity() : 0)));
+
+        for (Map.Entry<String, Integer> product : requested.entrySet()) {
+            int quantity = available.getOrDefault(product.getKey(), 0);
+            if (quantity <= 0) {
+                throw new BusinessException("Product Must Exist In Stock.");
+            }
+            if (product.getValue() > quantity) {
+                throw new BusinessException("Requested Quantity Exceeds Available Stock.");
+            }
+        }
     }
     private OrderResponse toResponse(Order order) {
         List<Product> orderProducts = productRepository.getProductsByOrderId(order.getId());

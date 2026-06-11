@@ -29,12 +29,22 @@
     <label><span>Remark</span><textarea name="orderRemark" [(ngModel)]="vm.orderForm.remark"></textarea></label>
 
     <div class="product-form">
-      <label><span>Product</span><input name="productName" [(ngModel)]="vm.productForm.product" /></label>
-      <label><span>Reference</span><input name="productRef" [(ngModel)]="vm.productForm.productRef" /></label>
+      <label>
+        <span>Product</span>
+        <select name="productName" [(ngModel)]="vm.productForm.product" (ngModelChange)="vm.selectOrderProduct($event)">
+          <option value="">Select product</option>
+          @for (stock of vm.stockProductOptions(); track stock.product) {
+            <option [value]="stock.product">{{ stock.product }} - {{ stock.quantity }} available</option>
+          }
+        </select>
+      </label>
       <label><span>Qty</span><input name="productQty" type="number" min="1" [(ngModel)]="vm.productForm.quantity" /></label>
       <label><span>Price</span><input name="productPrice" type="number" min="0" step="0.01" [(ngModel)]="vm.productForm.pricePerUnit" /></label>
       <button class="secondary-button" type="button" (click)="vm.addProduct()">Add product</button>
     </div>
+    @if (vm.productForm.product) {
+      <p class="stock-hint">Available stock: {{ vm.selectedStockQuantity() }}</p>
+    }
 
     @for (product of vm.orderForm.products; track $index) {
       <div class="product-line">

@@ -333,9 +333,9 @@ export class Dashboard implements OnInit, OnDestroy {
       return true;
     }
     if (role === 'manager') {
-      return section !== 'users' && section !== 'support';
+      return ['overview', 'orders', 'deliveries', 'payments', 'customers', 'suppliers', 'carriers'].includes(section);
     }
-    return ['orders', 'deliveries', 'payments'].includes(section);
+    return ['deliveries', 'stock', 'locations'].includes(section);
   }
 
   currentRole(): UserRole {
@@ -351,7 +351,7 @@ export class Dashboard implements OnInit, OnDestroy {
     if (this.isAdmin() || this.currentRole() === 'manager') {
       return 'overview';
     }
-    return 'orders';
+    return 'deliveries';
   }
 
   formVisible(section: Section) {
@@ -1422,9 +1422,67 @@ export class Dashboard implements OnInit, OnDestroy {
     this.openConfirmation('Delete location', 'This location will be removed and assigned stock items will be unassigned.', 'Delete', () => this.run(this.workspace.deleteLocation(id), 'Location deleted.'));
   }
 
+  stockProductOptions() {
+    const products = new Map<string, { product: string; productRef?: string; quantity: number; refs: Set<string> }>();
+
+    this.stocks.forEach(stock => {
+      const productName = stock.product?.trim();
+      if (!productName) {
+        return;
+      }
+      const key = productName.toLowerCase();
+      const current = products.get(key) ?? { product: productName, productRef: stock.productRef, quantity: 0, refs: new Set<string>() };
+      current.quantity += Number(stock.quantity ?? 0);
+      if (stock.productRef) {
+        current.refs.add(stock.productRef);
+      }
+      products.set(key, current);
+    });
+
+    return [...products.values()]
+      .map(product => ({
+        product: product.product,
+        productRef: product.refs.size === 1 ? [...product.refs][0] : product.productRef,
+        quantity: product.quantity
+      }))
+      .filter(product => product.quantity > 0)
+      .sort((first, second) => first.product.localeCompare(second.product));
+  }
+
+  selectOrderProduct(productName: string) {
+    const stock = this.stockProductOptions().find(product => product.product === productName);
+    this.productForm.product = stock?.product ?? '';
+    this.productForm.productRef = stock?.productRef;
+  }
+
+  selectedStockQuantity() {
+    const productName = this.productForm.product.trim().toLowerCase();
+    const stock = this.stockProductOptions().find(product => product.product.toLowerCase() === productName);
+
+    return stock?.quantity ?? 0;
+  }
+
+  orderProductQuantity(productName: string) {
+    const key = productName.trim().toLowerCase();
+
+    return this.orderForm.products
+      .filter(product => product.product.trim().toLowerCase() === key)
+      .reduce((total, product) => total + Number(product.quantity ?? 0), 0);
+  }
+
   addProduct() {
     if (!this.productForm.product.trim() || Number(this.productForm.quantity) < 1 || Number(this.productForm.pricePerUnit) <= 0) {
       this.showError('Fill valid product details.');
+      return;
+    }
+    const stockQuantity = this.selectedStockQuantity();
+    const requestedQuantity = this.orderProductQuantity(this.productForm.product) + Number(this.productForm.quantity);
+    if (stockQuantity <= 0) {
+      this.showError('Select a product from stock.');
+      return;
+    }
+    if (requestedQuantity > stockQuantity) {
+      this.showError('Requested quantity exceeds available stock.');
       return;
     }
     this.orderForm.products = [...this.orderForm.products, {
@@ -1440,9 +1498,20 @@ export class Dashboard implements OnInit, OnDestroy {
     this.orderForm.products = this.orderForm.products.filter((_, current) => current !== index);
   }
 
+  orderProductsWithinStock() {
+    return this.orderForm.products.every(product => {
+      const stock = this.stockProductOptions().find(item => item.product.trim().toLowerCase() === product.product.trim().toLowerCase());
+      return !!stock && this.orderProductQuantity(product.product) <= stock.quantity;
+    });
+  }
+
   saveOrder() {
     if (!this.orderForm.customerId || !this.orderForm.supplierId || !this.orderForm.products.length) {
       this.showError('Select a customer, select a supplier, and add at least one product.');
+      return;
+    }
+    if (!this.orderProductsWithinStock()) {
+      this.showError('Requested quantity exceeds available stock.');
       return;
     }
     const request: OrderRequest = {
@@ -1985,12 +2054,15 @@ export class Dashboard implements OnInit, OnDestroy {
   }
 
   private readError(error: unknown) {
-    const response = error as { name?: string; error?: { message?: string; detail?: string; title?: string; errors?: Record<string, string> } };
+    const response = error as { name?: string; message?: string; error?: string | { message?: string; detail?: string; title?: string; errors?: Record<string, string> } };
     if (response.name === 'TimeoutError') {
       return 'Request timed out. Please try again.';
     }
-    const fieldError = response.error?.errors ? Object.values(response.error.errors)[0] : '';
-    return fieldError ?? response.error?.message ?? response.error?.detail ?? response.error?.title ?? 'Operation failed.';
+    if (typeof response.error === 'string') {
+      return response.error || response.message || 'Operation failed.';
+    }
+    const fieldError = response.error?.errors ? Object.values(response.error.errors).find(Boolean) : '';
+    return fieldError || response.error?.message || response.error?.detail || response.error?.title || response.message || 'Operation failed.';
   }
 
   private updateView() {

@@ -20,9 +20,10 @@
           </select>
         </label>
         <label><span>Password</span><input name="userPassword" type="password" [(ngModel)]="vm.userForm.password" [required]="!vm.userEditId" /></label>
-        <label class="single-check">
-          <input type="checkbox" name="userActive" [(ngModel)]="vm.userForm.isActive" />
-          <span>Active</span>
+        <label class="active-toggle">
+          <input name="userActive" type="checkbox" [(ngModel)]="vm.userForm.isActive" />
+          <span></span>
+          <strong>Active</strong>
         </label>
         <button class="primary-button" type="submit" [disabled]="vm.loading">{{ vm.userEditId ? 'Update' : 'Create' }}</button>
       </form>

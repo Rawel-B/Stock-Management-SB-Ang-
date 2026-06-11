@@ -2496,9 +2496,15 @@ a:hover {
 
 .product-form {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+  grid-template-columns: minmax(240px, 2fr) minmax(100px, 0.75fr) minmax(130px, 0.9fr) auto;
   gap: 10px;
   align-items: end;
+}
+
+.stock-hint {
+  margin: -2px 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
 }
 
 .product-line {
