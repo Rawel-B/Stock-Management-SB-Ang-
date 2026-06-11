@@ -1,13 +1,13 @@
 package com.dsm.repositories;
 
-import com.dsm.entities.Location;
-import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.data.mongodb.repository.Query;
-import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
-@Repository
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
+
+import com.dsm.entities.Location;
+
 public interface LocationRepository extends MongoRepository<Location, String> {
     @Query("{ 'name': ?0 }")
     Optional<Location> getLocationByName(String name);

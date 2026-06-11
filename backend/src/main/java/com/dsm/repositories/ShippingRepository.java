@@ -1,12 +1,12 @@
 package com.dsm.repositories;
 
-import com.dsm.entities.Shipping;
-import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.data.mongodb.repository.Query;
-import org.springframework.stereotype.Repository;
 import java.util.List;
 
-@Repository
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
+
+import com.dsm.entities.Shipping;
+
 public interface ShippingRepository extends MongoRepository<Shipping, String> {
     @Query("{ 'orderId': ?0 }")
     List<Shipping> getShippingsByOrderId(String orderId);

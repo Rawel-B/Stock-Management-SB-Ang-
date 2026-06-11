@@ -1,12 +1,12 @@
 package com.dsm.repositories;
 
-import com.dsm.entities.Product;
-import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.data.mongodb.repository.Query;
-import org.springframework.stereotype.Repository;
 import java.util.List;
 
-@Repository
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
+
+import com.dsm.entities.Product;
+
 public interface ProductRepository extends MongoRepository<Product, String> {
     @Query("{ 'orderId': ?0 }")
     List<Product> getProductsByOrderId(String orderId);

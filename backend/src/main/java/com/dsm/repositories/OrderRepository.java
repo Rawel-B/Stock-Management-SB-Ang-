@@ -1,16 +1,16 @@
 package com.dsm.repositories;
 
-import com.dsm.entities.Order;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.data.mongodb.repository.Query;
-import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-@Repository
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
+
+import com.dsm.entities.Order;
+
 public interface OrderRepository extends MongoRepository<Order, String> {
     @Query("{ 'customerId': ?0 }")
     List<Order> getOrdersByCustomerId(String clientId);
