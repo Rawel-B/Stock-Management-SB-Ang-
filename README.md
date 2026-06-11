@@ -28,9 +28,6 @@ The project is built with a separated architecture:
 - Location management
 - Support ticket system
 - Dashboard with KPIs, slicers, and charts
-- Swagger/OpenAPI documentation
-- Backend request validation
-- Docker support
 
 ## Roles
 
