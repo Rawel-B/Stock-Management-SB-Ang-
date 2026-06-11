@@ -1,21 +1,24 @@
 package com.dsm.services;
 
-import com.dsm.dto.request.*;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+
 import com.dsm.dto.request.RequestDTO.ShippingRequest;
-import com.dsm.dto.response.*;
 import com.dsm.dto.response.ResponseDTO.CarrierResponse;
 import com.dsm.dto.response.ResponseDTO.ShippingResponse;
-import com.dsm.entities.*;
+import com.dsm.entities.Carrier;
+import com.dsm.entities.Order;
+import com.dsm.entities.Shipping;
 import com.dsm.exception.BusinessException;
 import com.dsm.exception.ResourceNotFoundException;
 import com.dsm.repositories.CarrierRepository;
 import com.dsm.repositories.OrderRepository;
 import com.dsm.repositories.ShippingRepository;
+
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -35,6 +38,9 @@ public class ShippingService {
         }
         if (request.getCarrierId() != null) {
             carrier = carrierRepository.findById(request.getCarrierId()).orElseThrow(() -> new ResourceNotFoundException("Carrier Was Not Found."));
+            if (!Boolean.TRUE.equals(carrier.getIsActive())) {
+                throw new BusinessException("Inactive Carriers Cannot Be Assigned To Deliveries.");
+            }
         }
 
         Shipping shipping = Shipping.builder()
@@ -94,6 +100,9 @@ public class ShippingService {
         }
         if (request.getCarrierId() != null) {
             Carrier carrier = carrierRepository.findById(request.getCarrierId()).orElseThrow(() -> new ResourceNotFoundException("Carrier Was Not Found."));
+            if (!Boolean.TRUE.equals(carrier.getIsActive())) {
+                throw new BusinessException("Inactive Carriers Cannot Be Assigned To Deliveries.");
+            }
             shipping.setCarrierId(carrier.getId());
         }
 

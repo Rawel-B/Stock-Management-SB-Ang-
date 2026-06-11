@@ -24,11 +24,24 @@
   <section class="workspace-table">
     <div class="table-head">
       <h2>Carriers</h2>
+      <div class="table-filters">
+        <input name="carrierFilter" placeholder="Search carriers" [(ngModel)]="vm.filters.carriers" />
+        <select name="carrierStatusFilter" [(ngModel)]="vm.filters.carrierStatus">
+          <option value="">All</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+        @if (vm.filters.carriers || vm.filters.carrierStatus) {
+          <button class="icon-button" type="button" (click)="vm.clearFilter('carriers'); vm.clearFilter('carrierStatus')" aria-label="Clear carriers filter" data-tooltip="Clear">
+            <i class="pi pi-times"></i>
+          </button>
+        }
+      </div>
       <button class="icon-button" type="button" (click)="vm.openCreate('carriers')" aria-label="New Carrier" data-tooltip="New Carrier">
         <i class="pi pi-plus"></i>
       </button>
     </div>
-    @for (carrier of vm.carriers; track carrier.id) {
+    @for (carrier of vm.filteredCarriers(); track carrier.id) {
       <div class="row-shell">
         <article class="table-row" [class.open-row]="vm.isRowExpanded('carriers', carrier.id)" (click)="vm.toggleRow('carriers', carrier.id)">
           <div>

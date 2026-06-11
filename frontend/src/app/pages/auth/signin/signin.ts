@@ -16,12 +16,19 @@ export class Signin {
   private readonly auth = inject(Auth);
   private readonly router = inject(Router);
   readonly loading = signal(false);
+  readonly ticketLoading = signal(false);
   readonly error = signal('');
+  readonly ticketMessage = signal('');
   readonly submitted = signal(false);
+  readonly supportOpen = signal(false);
   readonly form = this.fb.nonNullable.group({
     username: [this.auth.rememberedUsername(), [Validators.required, AuthValidators.notBlank]],
     password: ['', [Validators.required, AuthValidators.notBlank]],
     remember: [true]
+  });
+  readonly ticketForm = this.fb.nonNullable.group({
+    email: ['', [Validators.required, AuthValidators.notBlank, AuthValidators.email, Validators.maxLength(120)]],
+    description: ['', [Validators.required, AuthValidators.notBlank, Validators.minLength(10)]]
   });
 
   submit() {
@@ -40,6 +47,30 @@ export class Signin {
         next: () => this.router.navigate(['/dashboard']),
         error: error => this.error.set(this.readError(error))
       });
+  }
+
+  createTicket() {
+    this.ticketMessage.set('');
+
+    if (this.ticketForm.invalid) {
+      this.ticketForm.markAllAsTouched();
+      return;
+    }
+
+    const value = this.ticketForm.getRawValue();
+    this.ticketLoading.set(true);
+    this.auth.createPublicSupportTicket({
+      subject: 'Sign In Access',
+      description: value.description.trim(),
+      email: value.email.trim().toLowerCase(),
+      category: 'access'
+    }).pipe(finalize(() => this.ticketLoading.set(false))).subscribe({
+      next: () => {
+        this.ticketMessage.set('Ticket sent.');
+        this.ticketForm.reset();
+      },
+      error: error => this.ticketMessage.set(this.readError(error))
+    });
   }
 
   private readError(error: unknown) {

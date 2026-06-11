@@ -21,7 +21,7 @@
       <span>Carrier</span>
       <select name="shippingCarrier" [(ngModel)]="vm.shippingForm.carrierId">
         <option value="">No carrier</option>
-        @for (carrier of vm.carriers; track carrier.id) {
+        @for (carrier of vm.activeCarriers(); track carrier.id) {
           <option [value]="carrier.id">{{ carrier.name }}</option>
         }
       </select>
@@ -39,6 +39,19 @@
   <section class="workspace-table">
     <div class="table-head">
       <h2>Deliveries</h2>
+      <div class="table-filters">
+        <select name="shippingStatusFilter" [(ngModel)]="vm.filters.shippingStatus" (ngModelChange)="vm.applyFilters()">
+          <option value="">All</option>
+          @for (status of vm.shippingStatuses; track status) {
+            <option [value]="status">{{ vm.shippingStatusLabel(status) }}</option>
+          }
+        </select>
+        @if (vm.filters.shippingStatus) {
+          <button class="icon-button" type="button" (click)="vm.clearFilter('shippingStatus')" aria-label="Clear deliveries filter" data-tooltip="Clear">
+            <i class="pi pi-times"></i>
+          </button>
+        }
+      </div>
       <button class="icon-button" type="button" (click)="vm.openCreate('deliveries')" aria-label="New Delivery" data-tooltip="New Delivery">
         <i class="pi pi-plus"></i>
       </button>

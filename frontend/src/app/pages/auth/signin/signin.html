@@ -81,12 +81,34 @@
 
       @if (error()) {
         <p class="form-error">{{ error() }}</p>
+        <button class="secondary-button" type="button" (click)="supportOpen.set(!supportOpen())">
+          Open access ticket
+        </button>
       }
 
       <button class="primary-button" type="submit" [disabled]="loading()">
         {{ loading() ? 'Signing in...' : 'Sign in' }}
       </button>
     </form>
+
+    @if (supportOpen()) {
+      <form [formGroup]="ticketForm" (ngSubmit)="createTicket()" class="auth-form access-ticket-form">
+        <label>
+          <span>Email</span>
+          <input type="email" formControlName="email" autocomplete="email" />
+        </label>
+        <label>
+          <span>Issue</span>
+          <textarea formControlName="description"></textarea>
+        </label>
+        @if (ticketMessage()) {
+          <p class="form-success">{{ ticketMessage() }}</p>
+        }
+        <button class="primary-button" type="submit" [disabled]="ticketLoading()">
+          {{ ticketLoading() ? 'Sending...' : 'Send ticket' }}
+        </button>
+      </form>
+    }
 
     <p class="auth-switch">No account yet? <a routerLink="/auth/signup">Create one</a></p>
   </section>

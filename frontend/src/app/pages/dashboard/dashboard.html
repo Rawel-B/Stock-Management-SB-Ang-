@@ -11,7 +11,7 @@
     </div>
 
     <nav class="workspace-nav" aria-label="Workspace sections">
-      @for (group of navGroups; track group.label) {
+      @for (group of visibleNavGroups(); track group.label) {
         <section class="nav-group" [class.support-group]="group.label === 'Support'" [class.primary-group]="!group.label">
           @if (group.label) {
             <h2>{{ group.label }}</h2>
@@ -82,6 +82,10 @@
 
     @if (activeSection === 'support') {
       <app-support-section [vm]="vm"></app-support-section>
+    }
+
+    @if (activeSection === 'users') {
+      <app-users-section [vm]="vm"></app-users-section>
     }
 
     @if (activeSection === 'overview') {

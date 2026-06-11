@@ -1,14 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import type { Dashboard } from '../../dashboard';
+import { Dashboard } from '../../dashboard';
 
 @Component({
-  selector: 'app-overview-section',
+  selector: 'app-users-section',
   imports: [CommonModule, FormsModule],
-  templateUrl: './overview-section.html',
-  styleUrl: './overview-section.scss'
+  templateUrl: './users-section.html',
+  styleUrl: './users-section.scss'
 })
-export class OverviewSection {
+export class UsersSection {
   @Input({ required: true }) vm!: Dashboard;
 }

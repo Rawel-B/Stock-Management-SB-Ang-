@@ -22,11 +22,13 @@ export interface ProfileRequest {
 }
 
 export interface AuthResponse {
+  id: string;
   token: string;
   username: string;
   name: string;
   email: string;
   role: string;
+  isActive: boolean;
 }
 
 export interface MessageResponse {

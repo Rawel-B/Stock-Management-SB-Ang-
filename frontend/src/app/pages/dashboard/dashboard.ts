@@ -16,6 +16,7 @@ import { ProfileSection } from './components/profile-section/profile-section';
 import { StockSection } from './components/stock-section/stock-section';
 import { SuppliersSection } from './components/suppliers-section/suppliers-section';
 import { SupportSection } from './components/support-section/support-section';
+import { UsersSection } from './components/users-section/users-section';
 import {
   CarrierRequest,
   CarrierResponse,
@@ -39,15 +40,25 @@ import {
   ShippingStatus,
   StockRequest,
   StockResponse,
+  SupportCategory,
+  SupportPriority,
+  SupportStatus,
+  SupportTicketRequest,
+  SupportTicketResponse,
   SupplierRequest,
-  SupplierResponse
+  SupplierResponse,
+  UserRequest,
+  UserResponse,
+  UserRole
 } from '../../core/models/workspace';
 
-type Section = 'overview' | 'orders' | 'deliveries' | 'payments' | 'customers' | 'suppliers' | 'carriers' | 'stock' | 'locations' | 'profile' | 'support';
+type Section = 'overview' | 'orders' | 'deliveries' | 'payments' | 'customers' | 'suppliers' | 'carriers' | 'stock' | 'locations' | 'profile' | 'support' | 'users';
 type Confirmation = { title: string; message: string; confirmText: string; action: () => void };
 type NavItem = { id: Section; label: string; icon: string };
 type NavGroup = { label: string; items: NavItem[] };
 type Toast = { type: 'success' | 'error'; message: string };
+type FilterKey = 'customers' | 'suppliers' | 'carriers' | 'carrierStatus' | 'stock' | 'locations' | 'orders' | 'orderStatus' | 'shippingStatus' | 'invoiceStatus' | 'invoiceMethod' | 'users' | 'support';
+type DashboardFilterKey = 'year' | 'orderStatus' | 'shippingStatus' | 'invoiceStatus';
 type WorkspaceData = {
   stats: DashboardStats;
   customers: CustomerResponse[];
@@ -58,6 +69,8 @@ type WorkspaceData = {
   orders: PageResponse<OrderSummaryResponse>;
   shippings: ShippingResponse[];
   invoices: InvoiceResponse[];
+  users: UserResponse[];
+  supportTickets: SupportTicketResponse[];
 };
 
 @Component({
@@ -75,7 +88,8 @@ type WorkspaceData = {
     ProfileSection,
     StockSection,
     SuppliersSection,
-    SupportSection
+    SupportSection,
+    UsersSection
   ],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
@@ -89,6 +103,7 @@ export class Dashboard implements OnInit, OnDestroy {
   private readonly activeSectionKey = 'dsm.activeSection';
   private readonly profileIconKey = 'dsm.profileIcon';
   private readonly requestTimeout = 15000;
+  private readonly backendFilterKeys: FilterKey[] = ['customers', 'suppliers', 'stock', 'locations', 'orderStatus', 'shippingStatus', 'support'];
   readonly profileIcons = ['pi-user', 'pi-id-card', 'pi-briefcase', 'pi-shield', 'pi-box'];
   readonly sections: { id: Section; label: string }[] = [
     { id: 'overview', label: 'Dashboard' },
@@ -100,6 +115,7 @@ export class Dashboard implements OnInit, OnDestroy {
     { id: 'carriers', label: 'Carriers' },
     { id: 'stock', label: 'Stock' },
     { id: 'locations', label: 'Locations' },
+    { id: 'users', label: 'Users' },
     { id: 'support', label: 'Support' }
   ];
   readonly navGroups: NavGroup[] = [
@@ -135,6 +151,7 @@ export class Dashboard implements OnInit, OnDestroy {
     {
       label: 'Support',
       items: [
+        { id: 'users', label: 'Users', icon: 'pi pi-lock' },
         { id: 'support', label: 'Support', icon: 'pi pi-ticket' }
       ]
     }
@@ -146,6 +163,10 @@ export class Dashboard implements OnInit, OnDestroy {
   readonly invoiceStatuses: InvoiceStatus[] = ['pending', 'processing', 'completed', 'failed', 'refunded', 'cancelled'];
   readonly invoiceWorkflowStatuses: InvoiceStatus[] = ['pending', 'processing', 'completed'];
   readonly invoicingMethods: InvoicingMethod[] = ['creditCard', 'debitCard', 'bankTransfer', 'Check', 'Cash', 'paypal', 'stripe', 'other'];
+  readonly userRoles: UserRole[] = ['administrator', 'manager', 'user'];
+  readonly supportCategories: SupportCategory[] = ['operations', 'account', 'data', 'technical', 'access'];
+  readonly supportPriorities: SupportPriority[] = ['low', 'normal', 'high', 'urgent'];
+  readonly supportStatuses: SupportStatus[] = ['open', 'inProgress', 'resolved', 'closed'];
   activeSection: Section = 'overview';
   loading = false;
   error = '';
@@ -159,6 +180,8 @@ export class Dashboard implements OnInit, OnDestroy {
   orders: OrderSummaryResponse[] = [];
   shippings: ShippingResponse[] = [];
   invoices: InvoiceResponse[] = [];
+  users: UserResponse[] = [];
+  supportTickets: SupportTicketResponse[] = [];
   customerEditId = '';
   carrierEditId = '';
   supplierEditId = '';
@@ -166,6 +189,8 @@ export class Dashboard implements OnInit, OnDestroy {
   locationEditId = '';
   orderEditId = '';
   shippingEditId = '';
+  userEditId = '';
+  supportEditId = '';
   customerForm: CustomerRequest = this.emptyCustomer();
   carrierForm: CarrierRequest = this.emptyCarrier();
   supplierForm: SupplierRequest = this.emptySupplier();
@@ -175,8 +200,31 @@ export class Dashboard implements OnInit, OnDestroy {
   productForm: ProductRequest = this.emptyProduct();
   shippingForm: ShippingRequest = this.emptyShipping();
   invoiceForm: InvoiceRequest = this.emptyInvoice();
+  userForm: UserRequest = this.emptyUser();
+  supportStatusForm: Record<string, { status: SupportStatus; assignedUserId: string }> = {};
   profileForm: ProfileRequest = this.emptyProfile();
   supportForm = this.emptySupport();
+  filters: Record<FilterKey, string> = {
+    customers: '',
+    suppliers: '',
+    carriers: '',
+    carrierStatus: '',
+    stock: '',
+    locations: '',
+    orders: '',
+    orderStatus: '',
+    shippingStatus: '',
+    invoiceStatus: '',
+    invoiceMethod: '',
+    users: '',
+    support: ''
+  };
+  dashboardFilters = {
+    year: '',
+    orderStatus: '',
+    shippingStatus: '',
+    invoiceStatus: ''
+  };
   confirmation: Confirmation | null = null;
   toast: Toast | null = null;
   accountMenuOpen = false;
@@ -194,10 +242,12 @@ export class Dashboard implements OnInit, OnDestroy {
     this.auth.profile().subscribe({
       next: () => {
         this.setProfileForm();
+        this.ensureAllowedSection();
         this.updateView();
       },
       error: () => {
         this.setProfileForm();
+        this.ensureAllowedSection();
         this.updateView();
       }
     });
@@ -257,10 +307,51 @@ export class Dashboard implements OnInit, OnDestroy {
   }
 
   setSection(section: Section) {
+    if (!this.canAccessSection(section)) {
+      this.activeSection = this.defaultSection();
+      this.saveActiveSection(this.activeSection);
+      return;
+    }
     this.activeSection = section;
     this.saveActiveSection(section);
     this.accountMenuOpen = false;
     this.clearMessages();
+  }
+
+  visibleNavGroups() {
+    return this.navGroups
+      .map(group => ({ ...group, items: group.items.filter(item => this.canAccessSection(item.id)) }))
+      .filter(group => group.items.length);
+  }
+
+  canAccessSection(section: Section) {
+    const role = this.currentRole();
+    if (section === 'profile') {
+      return true;
+    }
+    if (role === 'administrator') {
+      return true;
+    }
+    if (role === 'manager') {
+      return section !== 'users' && section !== 'support';
+    }
+    return ['orders', 'deliveries', 'payments'].includes(section);
+  }
+
+  currentRole(): UserRole {
+    const role = this.auth.user()?.role as UserRole | undefined;
+    return role && this.userRoles.includes(role) ? role : 'user';
+  }
+
+  isAdmin() {
+    return this.currentRole() === 'administrator';
+  }
+
+  defaultSection(): Section {
+    if (this.isAdmin() || this.currentRole() === 'manager') {
+      return 'overview';
+    }
+    return 'orders';
   }
 
   formVisible(section: Section) {
@@ -299,6 +390,14 @@ export class Dashboard implements OnInit, OnDestroy {
     if (section === 'payments') {
       this.invoiceForm = this.emptyInvoice();
     }
+    if (section === 'users') {
+      this.userForm = this.emptyUser();
+      this.userEditId = '';
+    }
+    if (section === 'support') {
+      this.supportForm = this.emptySupport();
+      this.supportEditId = '';
+    }
     this.formSections[section] = true;
   }
 
@@ -312,6 +411,9 @@ export class Dashboard implements OnInit, OnDestroy {
     }
     if (this.activeSection === 'support') {
       return 'Support';
+    }
+    if (this.activeSection === 'users') {
+      return 'Users';
     }
     return this.sections.find(section => section.id === this.activeSection)?.label ?? 'Dashboard';
   }
@@ -328,6 +430,410 @@ export class Dashboard implements OnInit, OnDestroy {
   selectProfileIcon(icon: string) {
     this.profileIcon = icon;
     localStorage.setItem(this.profileIconKey, icon);
+  }
+
+  applyFilters() {
+    this.loadAll();
+  }
+
+  clearFilter(key: FilterKey) {
+    this.filters[key] = '';
+    if (this.backendFilterKeys.includes(key)) {
+      this.loadAll();
+      return;
+    }
+    this.updateView();
+  }
+
+  filteredCarriers() {
+    const criteria = this.filters.carriers.trim().toLowerCase();
+    const status = this.filters.carrierStatus;
+
+    return this.carriers.filter(carrier => {
+      const matchesCriteria = !criteria
+        || carrier.name.toLowerCase().includes(criteria)
+        || (carrier.phone ?? '').toLowerCase().includes(criteria);
+      const matchesStatus = !status
+        || status === 'active' && carrier.isActive
+        || status === 'inactive' && !carrier.isActive;
+
+      return matchesCriteria && matchesStatus;
+    });
+  }
+
+  filteredInvoices() {
+    return this.invoices.filter(invoice => {
+      const matchesStatus = !this.filters.invoiceStatus || invoice.invoiceStatus === this.filters.invoiceStatus;
+      const matchesMethod = !this.filters.invoiceMethod || invoice.invoicingMethod === this.filters.invoiceMethod;
+
+      return matchesStatus && matchesMethod;
+    });
+  }
+
+  filteredOrders() {
+    const criteria = this.filters.orders.trim().toLowerCase();
+
+    return this.orders.filter(order => !criteria
+      || order.orderNumber.toLowerCase().includes(criteria)
+      || order.customerName.toLowerCase().includes(criteria)
+      || (order.supplierName ?? '').toLowerCase().includes(criteria)
+      || this.orderStatusLabel(order.status).toLowerCase().includes(criteria)
+      || order.totalAmount.toString().includes(criteria));
+  }
+
+  dashboardOrders() {
+    return this.dashboardOrderScope();
+  }
+
+  dashboardShippings() {
+    return this.dashboardShippingScope();
+  }
+
+  dashboardInvoices() {
+    return this.dashboardInvoiceScope();
+  }
+
+  dashboardOrderStatusOptions() {
+    return this.matchingStatuses(this.orderStatuses, this.dashboardOrderScope('orderStatus').map(order => order.status), this.dashboardFilters.orderStatus);
+  }
+
+  dashboardShippingStatusOptions() {
+    return this.matchingStatuses(this.shippingStatuses, this.dashboardShippingScope('shippingStatus').map(shipping => shipping.status), this.dashboardFilters.shippingStatus);
+  }
+
+  dashboardInvoiceStatusOptions() {
+    return this.matchingStatuses(this.invoiceStatuses, this.dashboardInvoiceScope('invoiceStatus').map(invoice => invoice.invoiceStatus), this.dashboardFilters.invoiceStatus);
+  }
+
+  dashboardCards() {
+    const shippings = this.dashboardShippings();
+    const orders = this.dashboardOrders();
+    const invoices = this.dashboardInvoices();
+    const collectedRevenue = invoices.filter(invoice => invoice.invoiceStatus === 'completed').reduce((total, invoice) => total + invoice.amount, 0);
+    const outstandingValue = invoices.filter(invoice => invoice.invoiceStatus === 'pending' || invoice.invoiceStatus === 'processing').reduce((total, invoice) => total + invoice.amount, 0);
+    const openOrders = orders.filter(order => order.status !== 'delivered' && order.status !== 'cancelled').length;
+    const approvalQueue = orders.filter(order => order.status === 'pendingApproval').length;
+    const deliveredShippings = shippings.filter(shipping => shipping.status === 'delivered').length;
+    const deliveryRate = shippings.length ? this.percent(deliveredShippings, shippings.length) : 0;
+    const stockUnits = this.stocks.reduce((total, stock) => total + stock.quantity, 0);
+    const assignedStockUnits = this.stocks.filter(stock => stock.location).reduce((total, stock) => total + stock.quantity, 0);
+
+    return [
+      { label: 'Collected Revenue', value: this.currencyLabel(collectedRevenue), detail: `${invoices.filter(invoice => invoice.invoiceStatus === 'completed').length} completed invoices`, icon: 'pi pi-dollar' },
+      { label: 'Open Orders', value: openOrders.toString(), detail: `${orders.length} total orders`, icon: 'pi pi-shopping-cart' },
+      { label: 'Approval Queue', value: approvalQueue.toString(), detail: 'Orders waiting validation', icon: 'pi pi-check-circle' },
+      { label: 'Delivery Completion', value: `${deliveryRate}%`, detail: `${deliveredShippings}/${shippings.length} delivered`, icon: 'pi pi-truck' },
+      { label: 'Stock Units', value: stockUnits.toString(), detail: `${assignedStockUnits} assigned to locations`, icon: 'pi pi-box' },
+      { label: 'Outstanding Value', value: this.currencyLabel(outstandingValue), detail: 'Pending or processing invoices', icon: 'pi pi-wallet' }
+    ];
+  }
+
+  dashboardOrderBreakdown() {
+    const orders = this.dashboardOrders();
+    return this.orderStatuses.map(status => ({
+      label: this.orderStatusLabel(status),
+      value: orders.filter(order => order.status === status).length
+    }));
+  }
+
+  dashboardCarrierBreakdown() {
+    const shippings = this.dashboardShippings();
+    const names = [...new Set(shippings.map(shipping => shipping.carrier?.name || 'No Carrier'))];
+    return names.map(name => ({
+      label: name,
+      value: shippings.filter(shipping => (shipping.carrier?.name || 'No Carrier') === name).length
+    }));
+  }
+
+  dashboardLocationBreakdown() {
+    const names = [...new Set(this.stocks.map(stock => stock.location || 'No Location'))];
+    return names.map(name => ({
+      label: name,
+      value: this.stocks.filter(stock => (stock.location || 'No Location') === name).reduce((total, stock) => total + stock.quantity, 0)
+    }));
+  }
+
+  dashboardInvoiceBreakdown() {
+    const invoices = this.dashboardInvoices();
+    return this.invoiceStatuses.map(status => ({
+      label: this.invoiceStatusLabel(status),
+      value: invoices.filter(invoice => invoice.invoiceStatus === status).length
+    }));
+  }
+
+  dashboardCustomerOrderValueBreakdown() {
+    const names = [...new Set(this.dashboardOrders().map(order => order.customerName || 'No Customer'))];
+    return names.map(name => ({
+      label: name,
+      value: this.dashboardOrders().filter(order => (order.customerName || 'No Customer') === name).length,
+      amount: this.dashboardOrders().filter(order => (order.customerName || 'No Customer') === name).reduce((total, order) => total + order.totalAmount, 0)
+    })).sort((first, second) => second.amount - first.amount).slice(0, 8);
+  }
+
+  dashboardTopCustomersRevenue() {
+    return this.dashboardCustomerOrderValueBreakdown().map(item => ({
+      label: item.label,
+      orders: item.value,
+      revenue: item.amount,
+      average: item.value ? item.amount / item.value : 0
+    }));
+  }
+
+  dashboardFulfillmentQueue() {
+    const orders = this.dashboardOrders();
+    const shippings = this.dashboardShippings();
+    const invoices = this.dashboardInvoices();
+
+    return [
+      { label: 'Awaiting Approval', value: orders.filter(order => order.status === 'pendingApproval').length, detail: 'Orders' },
+      { label: 'Ready For Delivery', value: orders.filter(order => order.status === 'validated').length, detail: 'Orders' },
+      { label: 'Preparing', value: shippings.filter(shipping => shipping.status === 'inPerparation').length, detail: 'Deliveries' },
+      { label: 'In Transit', value: shippings.filter(shipping => shipping.status === 'shipped' || shipping.status === 'inTransit').length, detail: 'Deliveries' },
+      { label: 'Delivered', value: orders.filter(order => order.status === 'delivered').length, detail: 'Orders' },
+      { label: 'Payment Pending', value: invoices.filter(invoice => invoice.invoiceStatus === 'pending' || invoice.invoiceStatus === 'processing').length, detail: 'Invoices' }
+    ];
+  }
+
+  dashboardFulfillmentTotal() {
+    return this.dashboardFulfillmentQueue().reduce((total, item) => total + item.value, 0);
+  }
+
+  dashboardFulfillmentBottleneck() {
+    return this.dashboardFulfillmentQueue().reduce((highest, item) => item.value > highest.value ? item : highest, { label: 'No Workload', value: 0, detail: '' });
+  }
+
+  dashboardRevenueMetrics() {
+    const invoices = this.dashboardInvoices();
+    const completed = invoices.filter(invoice => invoice.invoiceStatus === 'completed').reduce((total, invoice) => total + invoice.amount, 0);
+    const pending = invoices.filter(invoice => invoice.invoiceStatus === 'pending').reduce((total, invoice) => total + invoice.amount, 0);
+    const processing = invoices.filter(invoice => invoice.invoiceStatus === 'processing').reduce((total, invoice) => total + invoice.amount, 0);
+    const failed = invoices.filter(invoice => invoice.invoiceStatus === 'failed' || invoice.invoiceStatus === 'cancelled' || invoice.invoiceStatus === 'refunded').reduce((total, invoice) => total + invoice.amount, 0);
+
+    return [
+      { label: 'Completed', value: this.currencyLabel(completed) },
+      { label: 'Pending', value: this.currencyLabel(pending) },
+      { label: 'Processing', value: this.currencyLabel(processing) },
+      { label: 'Uncollected', value: this.currencyLabel(failed) }
+    ];
+  }
+
+  dashboardInvoiceValueBreakdown() {
+    const invoices = this.dashboardInvoices();
+    return this.invoiceStatuses.map(status => ({
+      label: this.invoiceStatusLabel(status),
+      value: invoices.filter(invoice => invoice.invoiceStatus === status).reduce((total, invoice) => total + invoice.amount, 0)
+    }));
+  }
+
+  dashboardYears() {
+    const orders = this.dashboardOrderScope('year');
+    const shippings = this.dashboardShippingScope('year');
+    const invoices = this.dashboardInvoiceScope('year');
+    const years = [
+      ...orders.map(order => new Date(order.orderDate).getFullYear()),
+      ...shippings.map(shipping => new Date(shipping.deliveryDate || shipping.createdAt).getFullYear()),
+      ...invoices.map(invoice => new Date(invoice.invoicingDate).getFullYear())
+    ].filter(year => !Number.isNaN(year));
+
+    return [...new Set(years)].sort((first, second) => second - first);
+  }
+
+  dashboardSelectedYear() {
+    const selected = Number(this.dashboardFilters.year);
+    return selected || null;
+  }
+
+  dashboardMonthlyOrders() {
+    const year = this.dashboardSelectedYear();
+    return this.monthlySeries(index => this.dashboardOrders().filter(order => {
+      const date = new Date(order.orderDate);
+      return (!year || date.getFullYear() === year) && date.getMonth() === index;
+    }).length);
+  }
+
+  dashboardMonthlyDeliveries() {
+    const year = this.dashboardSelectedYear();
+    return this.monthlySeries(index => this.dashboardShippings().filter(shipping => {
+      const date = new Date(shipping.deliveryDate || shipping.createdAt);
+      return (!year || date.getFullYear() === year) && date.getMonth() === index;
+    }).length);
+  }
+
+  dashboardMonthlyCollectedRevenue() {
+    const year = this.dashboardSelectedYear();
+    return this.monthlySeries(index => this.dashboardInvoices().filter(invoice => {
+      const date = new Date(invoice.invoicingDate);
+      return invoice.invoiceStatus === 'completed' && (!year || date.getFullYear() === year) && date.getMonth() === index;
+    }).reduce((total, invoice) => total + invoice.amount, 0));
+  }
+
+  dashboardCarrierRatings() {
+    return [...this.carriers]
+      .sort((first, second) => (second.rating ?? 0) - (first.rating ?? 0))
+      .slice(0, 5)
+      .map(carrier => ({ label: carrier.name, value: carrier.rating ?? 0 }));
+  }
+
+  linePoints(items: { value: number }[]) {
+    const max = this.lineScaleMax(items);
+
+    return items.map((item, index) => {
+      const x = this.chartX(index, items.length);
+      const y = this.chartY(item.value, max);
+      return `${x},${y}`;
+    }).join(' ');
+  }
+
+  lineAreaPoints(items: { value: number }[]) {
+    const points = this.linePoints(items);
+    return points ? `44,136 ${points} 300,136` : '';
+  }
+
+  lineMaxLabel(items: { value: number }[]) {
+    return Math.max(...items.map(item => item.value), 0);
+  }
+
+  lineMarkers(items: { label: string; value: number }[]) {
+    const max = this.lineScaleMax(items);
+    return items.map((item, index) => ({
+      label: item.label,
+      value: item.value,
+      x: this.chartX(index, items.length),
+      y: this.chartY(item.value, max)
+    }));
+  }
+
+  lineTicks(items: { value: number }[]) {
+    const max = this.lineScaleMax(items);
+    const values = max <= 4
+      ? Array.from({ length: max + 1 }, (_, index) => max - index)
+      : [max, max * 0.75, max * 0.5, max * 0.25, 0];
+
+    return values.map(value => ({ value, y: this.chartY(value, max) }));
+  }
+
+  lineMonthLabels(items: { label: string; value: number }[]) {
+    return items
+      .map((item, index) => ({ label: item.label, x: this.chartX(index, items.length) }))
+      .filter((_, index) => index === 0 || index === 2 || index === 5 || index === 8 || index === 11);
+  }
+
+  lineTickLabel(value: number, currency = false) {
+    if (!currency) {
+      return Math.round(value).toString();
+    }
+    if (value >= 1000000) {
+      return `$${(value / 1000000).toFixed(1)}M`;
+    }
+    if (value >= 1000) {
+      return `$${(value / 1000).toFixed(1)}K`;
+    }
+    return this.currencyLabel(value);
+  }
+
+  private monthlySeries(value: (monthIndex: number) => number) {
+    return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((label, index) => ({ label, value: value(index) }));
+  }
+
+  private chartX(index: number, total: number) {
+    return 44 + (total === 1 ? 0 : index * (256 / (total - 1)));
+  }
+
+  private chartY(value: number, max: number) {
+    return 136 - (value / Math.max(max, 1)) * 112;
+  }
+
+  private lineScaleMax(items: { value: number }[]) {
+    const highest = Math.max(...items.map(item => item.value), 0);
+    if (highest <= 4) {
+      return Math.max(Math.ceil(highest), 1);
+    }
+    const magnitude = Math.pow(10, Math.floor(Math.log10(highest)));
+    const normalized = highest / magnitude;
+    const rounded = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+
+    return rounded * magnitude;
+  }
+
+  private dashboardOrderScope(ignore?: DashboardFilterKey) {
+    const shippingOrderIds = this.dashboardShippingOrderIds(ignore);
+    const invoiceOrderIds = this.dashboardInvoiceOrderIds(ignore);
+
+    return this.orders.filter(order => {
+      const date = new Date(order.orderDate);
+      const matchesYear = ignore === 'year' || !this.dashboardSelectedYear() || date.getFullYear() === this.dashboardSelectedYear();
+      const matchesStatus = ignore === 'orderStatus' || !this.dashboardFilters.orderStatus || order.status === this.dashboardFilters.orderStatus;
+      const matchesShipping = ignore === 'shippingStatus' || !this.dashboardFilters.shippingStatus || shippingOrderIds.has(order.id);
+      const matchesInvoice = ignore === 'invoiceStatus' || !this.dashboardFilters.invoiceStatus || invoiceOrderIds.has(order.id);
+
+      return matchesYear && matchesStatus && matchesShipping && matchesInvoice;
+    });
+  }
+
+  private dashboardShippingScope(ignore?: DashboardFilterKey) {
+    const orderIds = this.dashboardOrderIds(ignore);
+    const invoiceOrderIds = this.dashboardInvoiceOrderIds(ignore);
+
+    return this.shippings.filter(shipping => {
+      const date = new Date(shipping.deliveryDate || shipping.createdAt);
+      const matchesYear = ignore === 'year' || !this.dashboardSelectedYear() || date.getFullYear() === this.dashboardSelectedYear();
+      const matchesStatus = ignore === 'shippingStatus' || !this.dashboardFilters.shippingStatus || shipping.status === this.dashboardFilters.shippingStatus;
+      const matchesOrder = ignore === 'orderStatus' || !this.dashboardFilters.orderStatus || orderIds.has(shipping.orderId);
+      const matchesInvoice = ignore === 'invoiceStatus' || !this.dashboardFilters.invoiceStatus || invoiceOrderIds.has(shipping.orderId);
+
+      return matchesYear && matchesStatus && matchesOrder && matchesInvoice;
+    });
+  }
+
+  private dashboardInvoiceScope(ignore?: DashboardFilterKey) {
+    const orderIds = this.dashboardOrderIds(ignore);
+    const shippingOrderIds = this.dashboardShippingOrderIds(ignore);
+
+    return this.invoices.filter(invoice => {
+      const date = new Date(invoice.invoicingDate);
+      const matchesYear = ignore === 'year' || !this.dashboardSelectedYear() || date.getFullYear() === this.dashboardSelectedYear();
+      const matchesStatus = ignore === 'invoiceStatus' || !this.dashboardFilters.invoiceStatus || invoice.invoiceStatus === this.dashboardFilters.invoiceStatus;
+      const matchesOrder = ignore === 'orderStatus' || !this.dashboardFilters.orderStatus || orderIds.has(invoice.orderId);
+      const matchesShipping = ignore === 'shippingStatus' || !this.dashboardFilters.shippingStatus || shippingOrderIds.has(invoice.orderId);
+
+      return matchesYear && matchesStatus && matchesOrder && matchesShipping;
+    });
+  }
+
+  private dashboardOrderIds(ignore?: DashboardFilterKey) {
+    return new Set(this.orders.filter(order => {
+      const date = new Date(order.orderDate);
+      const matchesYear = ignore === 'year' || !this.dashboardSelectedYear() || date.getFullYear() === this.dashboardSelectedYear();
+      const matchesStatus = ignore === 'orderStatus' || !this.dashboardFilters.orderStatus || order.status === this.dashboardFilters.orderStatus;
+
+      return matchesYear && matchesStatus;
+    }).map(order => order.id));
+  }
+
+  private dashboardShippingOrderIds(ignore?: DashboardFilterKey) {
+    return new Set(this.shippings.filter(shipping => {
+      const date = new Date(shipping.deliveryDate || shipping.createdAt);
+      const matchesYear = ignore === 'year' || !this.dashboardSelectedYear() || date.getFullYear() === this.dashboardSelectedYear();
+      const matchesStatus = ignore === 'shippingStatus' || !this.dashboardFilters.shippingStatus || shipping.status === this.dashboardFilters.shippingStatus;
+
+      return matchesYear && matchesStatus;
+    }).map(shipping => shipping.orderId));
+  }
+
+  private dashboardInvoiceOrderIds(ignore?: DashboardFilterKey) {
+    return new Set(this.invoices.filter(invoice => {
+      const date = new Date(invoice.invoicingDate);
+      const matchesYear = ignore === 'year' || !this.dashboardSelectedYear() || date.getFullYear() === this.dashboardSelectedYear();
+      const matchesStatus = ignore === 'invoiceStatus' || !this.dashboardFilters.invoiceStatus || invoice.invoiceStatus === this.dashboardFilters.invoiceStatus;
+
+      return matchesYear && matchesStatus;
+    }).map(invoice => invoice.orderId));
+  }
+
+  private matchingStatuses<T extends string>(statuses: T[], values: T[], selected: string) {
+    const available = new Set(values);
+
+    return statuses.filter(status => available.has(status) || status === selected);
   }
 
   orderBreakdown() {
@@ -380,6 +886,10 @@ export class Dashboard implements OnInit, OnDestroy {
     return value ? this.enumLabel(value) : '';
   }
 
+  currencyLabel(value: number) {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+  }
+
   isRowExpanded(section: Section, id: string) {
     return this.expandedRows[section] === id;
   }
@@ -420,6 +930,10 @@ export class Dashboard implements OnInit, OnDestroy {
 
   orderCanCancel(status: OrderStatus) {
     return status === 'pendingApproval' || status === 'validated';
+  }
+
+  orderCanDelete(status: OrderStatus) {
+    return status === 'pendingApproval' || status === 'cancelled';
   }
 
   orderStepTooltip(current: OrderStatus, status: OrderStatus) {
@@ -706,8 +1220,10 @@ export class Dashboard implements OnInit, OnDestroy {
     return total > 0 ? Math.round((value / total) * 100) : 0;
   }
 
-  maxValue(items: { value: number }[]) {
-    return Math.max(...items.map(item => item.value), 1);
+  maxValue<T extends object>(items: T[], key: keyof T = 'value' as keyof T) {
+    const currentKey = key;
+
+    return Math.max(...items.map(item => Number(item[currentKey]) || 0), 1);
   }
 
   openOrdersCount() {
@@ -1000,8 +1516,12 @@ export class Dashboard implements OnInit, OnDestroy {
     this.run(this.workspace.setOrderStatus(id, status), 'Order status updated.');
   }
 
-  deleteOrder(id: string) {
-    this.openConfirmation('Delete order', 'This order will be removed permanently.', 'Delete', () => this.run(this.workspace.deleteOrder(id), 'Order deleted.'));
+  deleteOrder(order: OrderSummaryResponse) {
+    if (!this.orderCanDelete(order.status)) {
+      this.showError('Only Pending Approval or Cancelled orders can be deleted.');
+      return;
+    }
+    this.openConfirmation('Delete order', 'This order will be removed permanently.', 'Delete', () => this.run(this.workspace.deleteOrder(order.id), 'Order deleted.'));
   }
 
   openDeliveryForOrder(order: OrderSummaryResponse) {
@@ -1089,12 +1609,135 @@ export class Dashboard implements OnInit, OnDestroy {
     this.openConfirmation('Delete invoice', 'This invoice will be removed permanently.', 'Delete', () => this.run(this.workspace.deleteInvoice(id), 'Invoice deleted.'));
   }
 
+  filteredUsers() {
+    const criteria = this.filters.users.trim().toLowerCase();
+
+    return this.users.filter(user => !criteria
+      || user.name.toLowerCase().includes(criteria)
+      || user.username.toLowerCase().includes(criteria)
+      || user.email.toLowerCase().includes(criteria)
+      || this.displayLabel(user.role).toLowerCase().includes(criteria));
+  }
+
+  filteredSupportTickets() {
+    const criteria = this.filters.support.trim().toLowerCase();
+
+    return this.supportTickets.filter(ticket => !criteria
+      || ticket.subject.toLowerCase().includes(criteria)
+      || (ticket.requesterName ?? '').toLowerCase().includes(criteria)
+      || (ticket.requesterEmail ?? '').toLowerCase().includes(criteria)
+      || this.displayLabel(ticket.status).toLowerCase().includes(criteria));
+  }
+
+  supportAssignableUsers() {
+    return this.users.filter(user => user.isActive && (user.role === 'administrator' || user.role === 'manager'));
+  }
+
+  activeSuppliers() {
+    return this.suppliers.filter(supplier => supplier.isActive);
+  }
+
+  activeCarriers() {
+    return this.carriers.filter(carrier => carrier.isActive);
+  }
+
+  saveUser() {
+    const request: UserRequest = {
+      username: this.userForm.username.trim(),
+      name: this.userForm.name.trim(),
+      email: this.userForm.email.trim().toLowerCase(),
+      role: this.userForm.role,
+      isActive: this.userForm.isActive,
+      password: this.userForm.password?.trim() || undefined
+    };
+    if (!request.username || !request.name || !request.email) {
+      this.showError('Fill all required user fields.');
+      return;
+    }
+    if (!this.emailPattern.test(request.email)) {
+      this.showError('Enter a valid email address.');
+      return;
+    }
+    if (!this.userEditId && !request.password) {
+      this.showError('Password must be filled.');
+      return;
+    }
+    this.run(this.workspace.saveUser(request, this.userEditId), 'User saved.', () => {
+      this.userForm = this.emptyUser();
+      this.userEditId = '';
+      this.closeForm('users');
+    });
+  }
+
+  editUser(user: UserResponse) {
+    this.userEditId = user.id;
+    this.userForm = {
+      username: user.username,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      isActive: user.isActive,
+      password: ''
+    };
+    this.formSections.users = true;
+  }
+
+  deleteUser(user: UserResponse) {
+    this.openConfirmation('Delete User', 'This user account will be removed permanently.', 'Delete', () => this.run(this.workspace.deleteUser(user.id), 'User deleted.'));
+  }
+
   submitSupportTicket() {
+    if (this.supportEditId) {
+      const request = this.supportStatusForm[this.supportEditId];
+      if (!request) {
+        this.showError('Select ticket status.');
+        return;
+      }
+      this.run(this.workspace.updateSupportTicket(this.supportEditId, {
+        status: request.status,
+        assignedUserId: request.assignedUserId || undefined
+      }), 'Ticket updated.', () => {
+        this.supportEditId = '';
+        this.closeForm('support');
+      });
+      return;
+    }
     if (!this.supportForm.subject.trim() || !this.supportForm.description.trim()) {
       this.showError('Fill the subject and description.');
       return;
     }
-    this.showError('Support tickets are not available yet.');
+    const request: SupportTicketRequest = {
+      subject: this.supportForm.subject.trim(),
+      description: this.supportForm.description.trim(),
+      category: this.supportForm.category,
+      priority: this.supportForm.priority,
+      assignedUserId: this.supportForm.assignedUserId || undefined
+    };
+    this.run(this.workspace.saveSupportTicket(request), 'Ticket created.', () => {
+      this.supportForm = this.emptySupport();
+      this.closeForm('support');
+    });
+  }
+
+  editSupportTicket(ticket: SupportTicketResponse) {
+    this.supportEditId = ticket.id;
+    this.supportStatusForm[ticket.id] = {
+      status: ticket.status,
+      assignedUserId: ticket.assignedUserId ?? ''
+    };
+    this.formSections.support = true;
+  }
+
+  updateSupportTicket(ticket: SupportTicketResponse) {
+    const request = this.supportStatusForm[ticket.id] ?? { status: ticket.status, assignedUserId: ticket.assignedUserId ?? '' };
+    this.run(this.workspace.updateSupportTicket(ticket.id, {
+      status: request.status,
+      assignedUserId: request.assignedUserId || undefined
+    }), 'Ticket updated.');
+  }
+
+  deleteSupportTicket(ticket: SupportTicketResponse) {
+    this.openConfirmation('Delete Ticket', 'This support ticket will be removed permanently.', 'Delete', () => this.run(this.workspace.deleteSupportTicket(ticket.id), 'Ticket deleted.'));
   }
 
   closeConfirmation() {
@@ -1131,14 +1774,16 @@ export class Dashboard implements OnInit, OnDestroy {
   private getWorkspaceData(): Observable<WorkspaceData> {
     return forkJoin({
       stats: this.workspace.getStats().pipe(timeout(this.requestTimeout), catchError(() => of(this.stats ?? this.emptyStats()))),
-      customers: this.workspace.getCustomers().pipe(timeout(this.requestTimeout), catchError(() => of(this.customers))),
+      customers: this.workspace.getCustomers(this.filters.customers).pipe(timeout(this.requestTimeout), catchError(() => of(this.customers))),
       carriers: this.workspace.getCarriers().pipe(timeout(this.requestTimeout), catchError(() => of(this.carriers))),
-      suppliers: this.workspace.getSuppliers().pipe(timeout(this.requestTimeout), catchError(() => of(this.suppliers))),
-      stocks: this.workspace.getStocks().pipe(timeout(this.requestTimeout), catchError(() => of(this.stocks))),
-      locations: this.workspace.getLocations().pipe(timeout(this.requestTimeout), catchError(() => of(this.locations))),
-      orders: this.workspace.getOrders().pipe(timeout(this.requestTimeout), catchError(() => of(this.currentOrdersPage()))),
-      shippings: this.workspace.getShippings().pipe(timeout(this.requestTimeout), catchError(() => of(this.shippings))),
-      invoices: this.workspace.getInvoices().pipe(timeout(this.requestTimeout), catchError(() => of(this.invoices)))
+      suppliers: this.workspace.getSuppliers(this.filters.suppliers).pipe(timeout(this.requestTimeout), catchError(() => of(this.suppliers))),
+      stocks: this.workspace.getStocks(this.filters.stock).pipe(timeout(this.requestTimeout), catchError(() => of(this.stocks))),
+      locations: this.workspace.getLocations(this.filters.locations).pipe(timeout(this.requestTimeout), catchError(() => of(this.locations))),
+      orders: this.workspace.getOrders(this.selectedOrderStatus()).pipe(timeout(this.requestTimeout), catchError(() => of(this.currentOrdersPage()))),
+      shippings: this.workspace.getShippings(this.selectedShippingStatus()).pipe(timeout(this.requestTimeout), catchError(() => of(this.shippings))),
+      invoices: this.workspace.getInvoices().pipe(timeout(this.requestTimeout), catchError(() => of(this.invoices))),
+      users: this.isAdmin() ? this.workspace.getUsers().pipe(timeout(this.requestTimeout), catchError(() => of(this.users))) : of(this.users),
+      supportTickets: this.isAdmin() ? this.workspace.getSupportTickets(this.filters.support).pipe(timeout(this.requestTimeout), catchError(() => of(this.supportTickets))) : of(this.supportTickets)
     });
   }
 
@@ -1152,6 +1797,11 @@ export class Dashboard implements OnInit, OnDestroy {
     this.orders = response.orders.content;
     this.shippings = response.shippings;
     this.invoices = response.invoices;
+    this.users = response.users;
+    this.supportTickets = response.supportTickets;
+    this.supportTickets.forEach(ticket => {
+      this.supportStatusForm[ticket.id] = this.supportStatusForm[ticket.id] ?? { status: ticket.status, assignedUserId: ticket.assignedUserId ?? '' };
+    });
   }
 
   private restoreActiveSection() {
@@ -1159,6 +1809,13 @@ export class Dashboard implements OnInit, OnDestroy {
 
     if (stored && this.isSection(stored)) {
       this.activeSection = stored;
+    }
+  }
+
+  private ensureAllowedSection() {
+    if (!this.canAccessSection(this.activeSection)) {
+      this.activeSection = this.defaultSection();
+      this.saveActiveSection(this.activeSection);
     }
   }
 
@@ -1215,6 +1872,16 @@ export class Dashboard implements OnInit, OnDestroy {
     };
   }
 
+  private selectedOrderStatus(): OrderStatus | undefined {
+    const status = this.filters.orderStatus as OrderStatus;
+    return this.orderStatuses.includes(status) ? status : undefined;
+  }
+
+  private selectedShippingStatus(): ShippingStatus | undefined {
+    const status = this.filters.shippingStatus as ShippingStatus;
+    return this.shippingStatuses.includes(status) ? status : undefined;
+  }
+
   dismissToast() {
     this.toast = null;
     this.error = '';
@@ -1262,12 +1929,16 @@ export class Dashboard implements OnInit, OnDestroy {
     return { orderId: '', method: 'Cash', amount: 0, transactionRef: '', remark: '' };
   }
 
+  private emptyUser(): UserRequest {
+    return { username: '', name: '', email: '', role: 'user', isActive: true, password: '' };
+  }
+
   private emptyProfile(): ProfileRequest {
     return { username: '', name: '', email: '', password: '' };
   }
 
   private emptySupport() {
-    return { subject: '', category: 'operations', priority: 'normal', description: '' };
+    return { subject: '', category: 'operations' as SupportCategory, priority: 'normal' as SupportPriority, description: '', assignedUserId: '' };
   }
 
   private setProfileForm() {

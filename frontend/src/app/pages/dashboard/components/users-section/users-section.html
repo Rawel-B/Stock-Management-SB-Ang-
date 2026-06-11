@@ -1,0 +1,80 @@
+<section class="workspace-grid">
+  @if (vm.formVisible('users')) {
+    <div class="form-backdrop" (click)="vm.closeForm('users')">
+      <form class="workspace-form modal-form" (ngSubmit)="vm.saveUser()" (click)="$event.stopPropagation()" novalidate>
+        <div class="form-head">
+          <button class="icon-button" type="button" (click)="vm.closeForm('users')" aria-label="Back" data-tooltip="Back">
+            <i class="pi pi-arrow-left"></i>
+          </button>
+          <h2>{{ vm.userEditId ? 'Update User' : 'New User' }}</h2>
+        </div>
+        <label><span>Name</span><input name="userName" [(ngModel)]="vm.userForm.name" required /></label>
+        <label><span>Username</span><input name="userUsername" [(ngModel)]="vm.userForm.username" required /></label>
+        <label><span>Email</span><input name="userEmail" type="email" [(ngModel)]="vm.userForm.email" required /></label>
+        <label>
+          <span>Role</span>
+          <select name="userRole" [(ngModel)]="vm.userForm.role">
+            @for (role of vm.userRoles; track role) {
+              <option [value]="role">{{ vm.displayLabel(role) }}</option>
+            }
+          </select>
+        </label>
+        <label><span>Password</span><input name="userPassword" type="password" [(ngModel)]="vm.userForm.password" [required]="!vm.userEditId" /></label>
+        <label class="single-check">
+          <input type="checkbox" name="userActive" [(ngModel)]="vm.userForm.isActive" />
+          <span>Active</span>
+        </label>
+        <button class="primary-button" type="submit" [disabled]="vm.loading">{{ vm.userEditId ? 'Update' : 'Create' }}</button>
+      </form>
+    </div>
+  }
+
+  <section class="workspace-table">
+    <div class="table-head">
+      <h2>Users</h2>
+      <div class="table-filters">
+        <input name="usersFilter" placeholder="Search users" [(ngModel)]="vm.filters.users" />
+        @if (vm.filters.users) {
+          <button class="icon-button" type="button" (click)="vm.clearFilter('users')" aria-label="Clear users filter" data-tooltip="Clear">
+            <i class="pi pi-times"></i>
+          </button>
+        }
+      </div>
+      <button class="icon-button" type="button" (click)="vm.openCreate('users')" aria-label="New User" data-tooltip="New User">
+        <i class="pi pi-plus"></i>
+      </button>
+    </div>
+    @for (user of vm.filteredUsers(); track user.id) {
+      <div class="row-shell">
+        <article class="table-row" [class.open-row]="vm.isRowExpanded('users', user.id)" (click)="vm.toggleRow('users', user.id)">
+          <div>
+            <strong>{{ user.name }}</strong>
+            <span>{{ user.email }}</span>
+          </div>
+          <span>{{ vm.displayLabel(user.role) }}</span>
+          <span class="status-pill" [class.cancelled]="!user.isActive">{{ user.isActive ? 'Active' : 'Locked' }}</span>
+          <div class="row-actions" (click)="$event.stopPropagation()">
+            <button class="icon-button" type="button" (click)="vm.editUser(user)" aria-label="Edit user" data-tooltip="Edit">
+              <i class="pi pi-pencil"></i>
+            </button>
+            <button class="icon-button" type="button" (click)="vm.deleteUser(user)" aria-label="Delete user" data-tooltip="Delete">
+              <i class="pi pi-trash"></i>
+            </button>
+          </div>
+          <span class="row-chevron"><i class="pi pi-chevron-down"></i></span>
+        </article>
+        @if (vm.isRowExpanded('users', user.id)) {
+          <section class="row-detail">
+            <div><span>Name</span><strong>{{ user.name }}</strong></div>
+            <div><span>Username</span><strong>{{ user.username }}</strong></div>
+            <div><span>Email</span><strong>{{ user.email }}</strong></div>
+            <div><span>Role</span><strong>{{ vm.displayLabel(user.role) }}</strong></div>
+            <div><span>Status</span><strong>{{ user.isActive ? 'Active' : 'Locked' }}</strong></div>
+          </section>
+        }
+      </div>
+    } @empty {
+      <p class="empty-state">No users found.</p>
+    }
+  </section>
+</section>

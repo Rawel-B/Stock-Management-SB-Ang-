@@ -2,6 +2,10 @@ export type OrderStatus = 'pendingApproval' | 'validated' | 'ongoing' | 'deliver
 export type ShippingStatus = 'inPerparation' | 'shipped' | 'inTransit' | 'delivered' | 'failed' | 'returned';
 export type InvoiceStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'refunded' | 'cancelled';
 export type InvoicingMethod = 'creditCard' | 'debitCard' | 'bankTransfer' | 'Check' | 'Cash' | 'paypal' | 'stripe' | 'other';
+export type UserRole = 'administrator' | 'manager' | 'user';
+export type SupportCategory = 'operations' | 'account' | 'data' | 'technical' | 'access';
+export type SupportPriority = 'low' | 'normal' | 'high' | 'urgent';
+export type SupportStatus = 'open' | 'inProgress' | 'resolved' | 'closed';
 
 export interface CustomerRequest {
   name: string;
@@ -165,6 +169,51 @@ export interface DashboardStats {
   totalStocks: number;
   shippingInPerparation: number;
   invoicePending: number;
+}
+
+export interface UserRequest {
+  username: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  isActive: boolean;
+  password?: string;
+}
+
+export interface UserResponse extends UserRequest {
+  id: string;
+  createdAt?: string;
+}
+
+export interface SupportTicketRequest {
+  subject: string;
+  description: string;
+  category: SupportCategory;
+  priority: SupportPriority;
+  assignedUserId?: string;
+}
+
+export interface SupportTicketStatusRequest {
+  status: SupportStatus;
+  assignedUserId?: string;
+}
+
+export interface PublicSupportTicketRequest {
+  subject: string;
+  description: string;
+  email?: string;
+  category: SupportCategory;
+}
+
+export interface SupportTicketResponse extends SupportTicketRequest {
+  id: string;
+  status: SupportStatus;
+  requesterId?: string;
+  requesterName?: string;
+  requesterEmail?: string;
+  assignedUserName?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface PageResponse<T> {

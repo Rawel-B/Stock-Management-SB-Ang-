@@ -18,7 +18,7 @@
       </select>
     </label>
     <label>
-      <span>Mode</span>
+      <span>Method</span>
       <select name="invoiceMethod" [(ngModel)]="vm.invoiceForm.method">
         @for (method of vm.invoicingMethods; track method) {
           <option [value]="method">{{ vm.methodLabel(method) }}</option>
@@ -36,11 +36,30 @@
   <section class="workspace-table">
     <div class="table-head">
       <h2>Invoices</h2>
+      <div class="table-filters">
+        <select name="invoiceStatusFilter" [(ngModel)]="vm.filters.invoiceStatus">
+          <option value="">All</option>
+          @for (status of vm.invoiceStatuses; track status) {
+            <option [value]="status">{{ vm.invoiceStatusLabel(status) }}</option>
+          }
+        </select>
+        <select name="invoiceMethodFilter" [(ngModel)]="vm.filters.invoiceMethod">
+          <option value="">All Methods</option>
+          @for (method of vm.invoicingMethods; track method) {
+            <option [value]="method">{{ vm.methodLabel(method) }}</option>
+          }
+        </select>
+        @if (vm.filters.invoiceStatus || vm.filters.invoiceMethod) {
+          <button class="icon-button" type="button" (click)="vm.clearFilter('invoiceStatus'); vm.clearFilter('invoiceMethod')" aria-label="Clear invoices filter" data-tooltip="Clear">
+            <i class="pi pi-times"></i>
+          </button>
+        }
+      </div>
       <button class="icon-button" type="button" (click)="vm.openCreate('payments')" aria-label="New Invoice" data-tooltip="New Invoice">
         <i class="pi pi-plus"></i>
       </button>
     </div>
-    @for (invoice of vm.invoices; track invoice.id) {
+    @for (invoice of vm.filteredInvoices(); track invoice.id) {
       <div class="row-shell">
         <article class="table-row phase-row" [class.open-row]="vm.isRowExpanded('payments', invoice.id)" (click)="vm.toggleRow('payments', invoice.id)">
           <div>
@@ -98,7 +117,7 @@
             <div><span>Order</span><strong>{{ invoice.orderNumber }}</strong></div>
             <div><span>Amount</span><strong>{{ invoice.amount | currency }}</strong></div>
             <div><span>Status</span><strong>{{ vm.invoiceStatusLabel(invoice.invoiceStatus) }}</strong></div>
-            <div><span>Mode</span><strong>{{ vm.methodLabel(invoice.invoicingMethod) }}</strong></div>
+            <div><span>Method</span><strong>{{ vm.methodLabel(invoice.invoicingMethod) }}</strong></div>
             <div><span>Transaction ref</span><strong>{{ invoice.transactionRef || 'No reference' }}</strong></div>
             <div class="detail-wide"><span>Remark</span><strong>{{ invoice.remark || 'No remark' }}</strong></div>
           </section>

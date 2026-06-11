@@ -1,15 +1,19 @@
 package com.dsm.dto.response;
 
-import com.dsm.entities.*;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.*;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+
+import com.dsm.entities.Invoice;
+import com.dsm.entities.Order;
+import com.dsm.entities.Shipping;
+import com.dsm.entities.SupportTicket;
+import com.dsm.entities.User;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.List;
 
 public class ResponseDTO {
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
@@ -131,15 +135,43 @@ public class ResponseDTO {
     }
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class AuthResponse {
+        private String id;
         private String token;
         private String username;
         private String name;
         private String email;
         private String role;
+        private Boolean isActive;
     }
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class MessageResponse {
         private String message;
+    }
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class UserResponse {
+        private String id;
+        private String username;
+        private String name;
+        private String email;
+        private User.Role role;
+        private Boolean isActive;
+        private LocalDateTime createdAt;
+    }
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class SupportTicketResponse {
+        private String id;
+        private String subject;
+        private String description;
+        private SupportTicket.Category category;
+        private SupportTicket.Priority priority;
+        private SupportTicket.Status status;
+        private String requesterId;
+        private String requesterName;
+        private String requesterEmail;
+        private String assignedUserId;
+        private String assignedUserName;
+        private LocalDateTime createdAt;
+        private LocalDateTime updatedAt;
     }
 
 }

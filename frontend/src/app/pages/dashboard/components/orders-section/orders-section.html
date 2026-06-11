@@ -21,7 +21,7 @@
       <span>Supplier</span>
       <select name="orderSupplier" [(ngModel)]="vm.orderForm.supplierId">
         <option value="">No supplier</option>
-        @for (supplier of vm.suppliers; track supplier.id) {
+        @for (supplier of vm.activeSuppliers(); track supplier.id) {
           <option [value]="supplier.id">{{ supplier.name }}</option>
         }
       </select>
@@ -51,11 +51,30 @@
   <section class="workspace-table">
     <div class="table-head">
       <h2>Orders</h2>
+      <div class="table-filters">
+        <input name="orderFilter" placeholder="Search orders" [(ngModel)]="vm.filters.orders" />
+        <select name="orderStatusFilter" [(ngModel)]="vm.filters.orderStatus" (ngModelChange)="vm.applyFilters()">
+          <option value="">All</option>
+          @for (status of vm.orderStatuses; track status) {
+            <option [value]="status">{{ vm.orderStatusLabel(status) }}</option>
+          }
+        </select>
+        @if (vm.filters.orders) {
+          <button class="icon-button" type="button" (click)="vm.clearFilter('orders')" aria-label="Clear orders search" data-tooltip="Clear Search">
+            <i class="pi pi-times"></i>
+          </button>
+        }
+        @if (vm.filters.orderStatus) {
+          <button class="icon-button" type="button" (click)="vm.clearFilter('orderStatus')" aria-label="Clear orders filter" data-tooltip="Clear">
+            <i class="pi pi-times"></i>
+          </button>
+        }
+      </div>
       <button class="icon-button" type="button" (click)="vm.openCreate('orders')" aria-label="New Order" data-tooltip="New Order">
         <i class="pi pi-plus"></i>
       </button>
     </div>
-    @for (order of vm.orders; track order.id) {
+    @for (order of vm.filteredOrders(); track order.id) {
       <div class="row-shell">
         <article class="table-row order-row" [class.open-row]="vm.isRowExpanded('orders', order.id)" (click)="vm.toggleRow('orders', order.id)">
           <div>
@@ -93,14 +112,11 @@
             <button class="icon-button" type="button" (click)="vm.editOrder(order)" aria-label="Edit order" data-tooltip="Edit">
               <i class="pi pi-pencil"></i>
             </button>
-            @if (order.status === 'pendingApproval') {
-              <button class="icon-button" type="button" (click)="vm.validateOrder(order.id)" aria-label="Validate Order" data-tooltip="Validate Order">
-                <i class="pi pi-check"></i>
+            @if (vm.orderCanDelete(order.status)) {
+              <button class="icon-button" type="button" (click)="vm.deleteOrder(order)" aria-label="Delete order" data-tooltip="Delete">
+                <i class="pi pi-trash"></i>
               </button>
             }
-            <button class="icon-button" type="button" (click)="vm.deleteOrder(order.id)" aria-label="Delete order" data-tooltip="Delete">
-              <i class="pi pi-trash"></i>
-            </button>
           </div>
           <span class="row-chevron"><i class="pi pi-chevron-down"></i></span>
         </article>

@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { tap } from 'rxjs';
 import { Api } from './api';
 import { AuthResponse, AuthSession, ForgotPasswordRequest, MessageResponse, ProfileRequest, SignInRequest, SignUpRequest } from '../models/auth';
+import { PublicSupportTicketRequest, SupportTicketResponse } from '../models/workspace';
 
 @Injectable({
   providedIn: 'root'
@@ -30,6 +31,10 @@ export class Auth {
 
   forgotPassword(request: ForgotPasswordRequest) {
     return this.api.post<MessageResponse>('/auth/forgot-password', request);
+  }
+
+  createPublicSupportTicket(request: PublicSupportTicketRequest) {
+    return this.api.post<SupportTicketResponse>('/support/tickets/public', request);
   }
 
   profile() {

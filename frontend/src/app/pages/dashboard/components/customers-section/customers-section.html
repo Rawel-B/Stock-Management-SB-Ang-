@@ -20,6 +20,17 @@
   <section class="workspace-table">
     <div class="table-head">
       <h2>Customers</h2>
+      <div class="table-filters">
+        <input name="customerFilter" placeholder="Search customers" [(ngModel)]="vm.filters.customers" (keyup.enter)="vm.applyFilters()" />
+        <button class="icon-button" type="button" (click)="vm.applyFilters()" aria-label="Search customers" data-tooltip="Search">
+          <i class="pi pi-search"></i>
+        </button>
+        @if (vm.filters.customers) {
+          <button class="icon-button" type="button" (click)="vm.clearFilter('customers')" aria-label="Clear customers filter" data-tooltip="Clear">
+            <i class="pi pi-times"></i>
+          </button>
+        }
+      </div>
       <button class="icon-button" type="button" (click)="vm.openCreate('customers')" aria-label="New Customer" data-tooltip="New Customer">
         <i class="pi pi-plus"></i>
       </button>

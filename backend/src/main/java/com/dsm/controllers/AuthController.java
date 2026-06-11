@@ -110,7 +110,7 @@ public class AuthController {
         return ResponseEntity.ok(MessageResponse.builder().message("Temporary password: " + temporaryPassword).build());
     }
     private AuthResponse authResponse(User user, String token) {
-        return AuthResponse.builder().token(token).username(user.getUsername()).name(user.getName()).email(user.getEmail()).role(user.getRole().name()).build();
+        return AuthResponse.builder().id(user.getId()).token(token).username(user.getUsername()).name(user.getName()).email(user.getEmail()).role(user.getRole().name()).isActive(user.getIsActive()).build();
     }
 
 }

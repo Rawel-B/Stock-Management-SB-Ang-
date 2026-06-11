@@ -21,8 +21,13 @@ import {
   ShippingStatus,
   StockRequest,
   StockResponse,
+  SupportTicketRequest,
+  SupportTicketResponse,
+  SupportTicketStatusRequest,
   SupplierRequest,
-  SupplierResponse
+  SupplierResponse,
+  UserRequest,
+  UserResponse
 } from '../models/workspace';
 
 @Injectable({
@@ -151,5 +156,34 @@ export class Workspace {
 
   deleteInvoice(id: string) {
     return this.api.delete<void>(`/invoices/${id}`);
+  }
+
+  getUsers() {
+    return this.api.get<UserResponse[]>('/users');
+  }
+
+  saveUser(request: UserRequest, id?: string) {
+    return id ? this.api.put<UserResponse>(`/users/${id}`, request) : this.api.post<UserResponse>('/users', request);
+  }
+
+  deleteUser(id: string) {
+    return this.api.delete<void>(`/users/${id}`);
+  }
+
+  getSupportTickets(criteria = '') {
+    const query = criteria.trim() ? `?criteria=${encodeURIComponent(criteria.trim())}` : '';
+    return this.api.get<SupportTicketResponse[]>(`/support/tickets${query}`);
+  }
+
+  saveSupportTicket(request: SupportTicketRequest) {
+    return this.api.post<SupportTicketResponse>('/support/tickets', request);
+  }
+
+  updateSupportTicket(id: string, request: SupportTicketStatusRequest) {
+    return this.api.patch<SupportTicketResponse>(`/support/tickets/${id}`, request);
+  }
+
+  deleteSupportTicket(id: string) {
+    return this.api.delete<void>(`/support/tickets/${id}`);
   }
 }

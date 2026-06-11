@@ -15,10 +15,17 @@ export class ForgotPassword {
   private readonly fb = inject(FormBuilder);
   private readonly auth = inject(Auth);
   readonly loading = signal(false);
+  readonly ticketLoading = signal(false);
   readonly error = signal('');
   readonly message = signal('');
+  readonly ticketMessage = signal('');
+  readonly supportOpen = signal(false);
   readonly form = this.fb.nonNullable.group({
     email: ['', [Validators.required, AuthValidators.notBlank, AuthValidators.email, Validators.maxLength(120)]]
+  });
+  readonly ticketForm = this.fb.nonNullable.group({
+    email: ['', [Validators.required, AuthValidators.notBlank, AuthValidators.email, Validators.maxLength(120)]],
+    description: ['', [Validators.required, AuthValidators.notBlank, Validators.minLength(10)]]
   });
 
   submit() {
@@ -38,6 +45,30 @@ export class ForgotPassword {
         next: response => this.message.set(response.message),
         error: error => this.error.set(this.readError(error))
       });
+  }
+
+  createTicket() {
+    this.ticketMessage.set('');
+
+    if (this.ticketForm.invalid) {
+      this.ticketForm.markAllAsTouched();
+      return;
+    }
+
+    const value = this.ticketForm.getRawValue();
+    this.ticketLoading.set(true);
+    this.auth.createPublicSupportTicket({
+      subject: 'Password Access',
+      description: value.description.trim(),
+      email: value.email.trim().toLowerCase(),
+      category: 'access'
+    }).pipe(finalize(() => this.ticketLoading.set(false))).subscribe({
+      next: () => {
+        this.ticketMessage.set('Ticket sent.');
+        this.ticketForm.reset();
+      },
+      error: error => this.ticketMessage.set(this.readError(error))
+    });
   }
 
   private readError(error: unknown) {

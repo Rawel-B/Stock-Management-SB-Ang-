@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import com.dsm.entities.Invoice;
+import com.dsm.entities.SupportTicket;
+import com.dsm.entities.User;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
@@ -141,5 +143,34 @@ public class RequestDTO {
         @NotBlank @Size(min = 2, max = 80) private String name;
         @Email @NotBlank @Size(max = 120) @Pattern(regexp = "^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$") private String email;
         @Size(min = 6, max = 72) private String password;
+    }
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class UserRequest {
+        @NotBlank @Size(min = 3, max = 30) @Pattern(regexp = "^[a-zA-Z0-9._-]+$") private String username;
+        @NotBlank @Size(min = 2, max = 80) private String name;
+        @Email @NotBlank @Size(max = 120) @Pattern(regexp = "^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$") private String email;
+        @NotNull private User.Role role;
+        private Boolean isActive;
+        @Size(min = 6, max = 72) private String password;
+    }
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class SupportTicketRequest {
+        @NotBlank @Size(min = 3, max = 120) private String subject;
+        @NotBlank @Size(min = 10, max = 2000) private String description;
+        @NotNull private SupportTicket.Category category;
+        @NotNull private SupportTicket.Priority priority;
+        private String assignedUserId;
+    }
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class SupportTicketStatusRequest {
+        @NotNull private SupportTicket.Status status;
+        private String assignedUserId;
+    }
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class PublicSupportTicketRequest {
+        @NotBlank @Size(min = 3, max = 120) private String subject;
+        @NotBlank @Size(min = 10, max = 2000) private String description;
+        @Email @Size(max = 120) @Pattern(regexp = "^$|^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$") private String email;
+        @NotNull private SupportTicket.Category category;
     }
 }

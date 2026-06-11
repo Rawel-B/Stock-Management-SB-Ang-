@@ -1,115 +1,251 @@
-<section class="overview-grid">
-  <article class="chart-card order-chart-card">
-    <div class="chart-header">
-      <div>
-        <span>Orders</span>
-        <strong>{{ vm.stats?.ordersCount ?? 0 }}</strong>
+<section class="dashboard-panel">
+  <form class="dashboard-filters">
+    <label>
+      <span>Year</span>
+      <select name="dashboardYear" [(ngModel)]="vm.dashboardFilters.year">
+        <option value="">All</option>
+        @for (year of vm.dashboardYears(); track year) {
+          <option [value]="year">{{ year }}</option>
+        }
+      </select>
+    </label>
+    <label>
+      <span>Orders</span>
+      <select name="dashboardOrderStatus" [(ngModel)]="vm.dashboardFilters.orderStatus">
+        <option value="">All</option>
+        @for (status of vm.dashboardOrderStatusOptions(); track status) {
+          <option [value]="status">{{ vm.orderStatusLabel(status) }}</option>
+        }
+      </select>
+    </label>
+    <label>
+      <span>Deliveries</span>
+      <select name="dashboardShippingStatus" [(ngModel)]="vm.dashboardFilters.shippingStatus">
+        <option value="">All</option>
+        @for (status of vm.dashboardShippingStatusOptions(); track status) {
+          <option [value]="status">{{ vm.shippingStatusLabel(status) }}</option>
+        }
+      </select>
+    </label>
+    <label>
+      <span>Invoices</span>
+      <select name="dashboardInvoiceStatus" [(ngModel)]="vm.dashboardFilters.invoiceStatus">
+        <option value="">All</option>
+        @for (status of vm.dashboardInvoiceStatusOptions(); track status) {
+          <option [value]="status">{{ vm.invoiceStatusLabel(status) }}</option>
+        }
+      </select>
+    </label>
+  </form>
+
+  <section class="dashboard-kpis">
+    @for (card of vm.dashboardCards(); track card.label) {
+      <article>
+        <div>
+          <i [class]="card.icon"></i>
+          <span>{{ card.label }}</span>
+        </div>
+        <strong>{{ card.value }}</strong>
+        <p>{{ card.detail }}</p>
+      </article>
+    }
+  </section>
+
+  <section class="dashboard-top-charts">
+    <article class="chart-card trend-card">
+      <div class="chart-header">
+        <div>
+          <span>Orders</span>
+          <strong>Monthly Order Volume</strong>
+        </div>
       </div>
-      <p>{{ vm.openOrdersCount() }} open</p>
-    </div>
-    <div class="donut-wrap">
-      <div class="donut-chart" [style.background]="vm.orderChartBackground()">
-        <span>{{ vm.percent(vm.stats?.ordersDelivered ?? 0, vm.stats?.ordersCount ?? 0) }}%</span>
+      @if (vm.dashboardMonthlyOrders().length) {
+        <svg class="power-line-chart" viewBox="0 0 320 178">
+          @for (tick of vm.lineTicks(vm.dashboardMonthlyOrders()); track tick.value) {
+            <line class="grid-line" x1="44" x2="300" [attr.y1]="tick.y" [attr.y2]="tick.y"></line>
+            <text class="y-label" x="36" [attr.y]="tick.y + 4">{{ vm.lineTickLabel(tick.value) }}</text>
+          }
+          <line class="axis-line" x1="44" y1="24" x2="44" y2="136"></line>
+          <line class="axis-line" x1="44" y1="136" x2="300" y2="136"></line>
+          <polygon [attr.points]="vm.lineAreaPoints(vm.dashboardMonthlyOrders())"></polygon>
+          <polyline [attr.points]="vm.linePoints(vm.dashboardMonthlyOrders())"></polyline>
+          @for (point of vm.lineMarkers(vm.dashboardMonthlyOrders()); track point.label) {
+            <circle [attr.cx]="point.x" [attr.cy]="point.y" r="3"></circle>
+          }
+          @for (label of vm.lineMonthLabels(vm.dashboardMonthlyOrders()); track label.label) {
+            <text class="x-label" [attr.x]="label.x" y="160">{{ label.label }}</text>
+          }
+        </svg>
+      } @else {
+        <p class="empty-state">No orders yet.</p>
+      }
+    </article>
+
+    <article class="chart-card trend-card">
+      <div class="chart-header">
+        <div>
+          <span>Deliveries</span>
+          <strong>Monthly Delivery Volume</strong>
+        </div>
       </div>
-      <div class="chart-list">
-        @for (item of vm.orderBreakdown(); track item.label) {
+      @if (vm.dashboardMonthlyDeliveries().length) {
+        <svg class="power-line-chart" viewBox="0 0 320 178">
+          @for (tick of vm.lineTicks(vm.dashboardMonthlyDeliveries()); track tick.value) {
+            <line class="grid-line" x1="44" x2="300" [attr.y1]="tick.y" [attr.y2]="tick.y"></line>
+            <text class="y-label" x="36" [attr.y]="tick.y + 4">{{ vm.lineTickLabel(tick.value) }}</text>
+          }
+          <line class="axis-line" x1="44" y1="24" x2="44" y2="136"></line>
+          <line class="axis-line" x1="44" y1="136" x2="300" y2="136"></line>
+          <polygon [attr.points]="vm.lineAreaPoints(vm.dashboardMonthlyDeliveries())"></polygon>
+          <polyline [attr.points]="vm.linePoints(vm.dashboardMonthlyDeliveries())"></polyline>
+          @for (point of vm.lineMarkers(vm.dashboardMonthlyDeliveries()); track point.label) {
+            <circle [attr.cx]="point.x" [attr.cy]="point.y" r="3"></circle>
+          }
+          @for (label of vm.lineMonthLabels(vm.dashboardMonthlyDeliveries()); track label.label) {
+            <text class="x-label" [attr.x]="label.x" y="160">{{ label.label }}</text>
+          }
+        </svg>
+      } @else {
+        <p class="empty-state">No deliveries yet.</p>
+      }
+    </article>
+
+    <article class="chart-card trend-card">
+      <div class="chart-header">
+        <div>
+          <span>Invoices</span>
+          <strong>Monthly Collected Revenue</strong>
+        </div>
+      </div>
+      @if (vm.dashboardMonthlyCollectedRevenue().length) {
+        <svg class="power-line-chart" viewBox="0 0 320 178">
+          @for (tick of vm.lineTicks(vm.dashboardMonthlyCollectedRevenue()); track tick.value) {
+            <line class="grid-line" x1="44" x2="300" [attr.y1]="tick.y" [attr.y2]="tick.y"></line>
+            <text class="y-label" x="36" [attr.y]="tick.y + 4">{{ vm.lineTickLabel(tick.value, true) }}</text>
+          }
+          <line class="axis-line" x1="44" y1="24" x2="44" y2="136"></line>
+          <line class="axis-line" x1="44" y1="136" x2="300" y2="136"></line>
+          <polygon [attr.points]="vm.lineAreaPoints(vm.dashboardMonthlyCollectedRevenue())"></polygon>
+          <polyline [attr.points]="vm.linePoints(vm.dashboardMonthlyCollectedRevenue())"></polyline>
+          @for (point of vm.lineMarkers(vm.dashboardMonthlyCollectedRevenue()); track point.label) {
+            <circle [attr.cx]="point.x" [attr.cy]="point.y" r="3"></circle>
+          }
+          @for (label of vm.lineMonthLabels(vm.dashboardMonthlyCollectedRevenue()); track label.label) {
+            <text class="x-label" [attr.x]="label.x" y="160">{{ label.label }}</text>
+          }
+        </svg>
+      } @else {
+        <p class="empty-state">No completed invoices yet.</p>
+      }
+    </article>
+  </section>
+
+  <section class="dashboard-board">
+    <article class="chart-card dashboard-chart-large">
+      <div class="chart-header">
+        <div>
+          <span>Orders</span>
+          <strong>Top Customers By Revenue</strong>
+        </div>
+      </div>
+      <div class="dashboard-line-list order-value-list">
+        @for (item of vm.dashboardTopCustomersRevenue(); track item.label) {
+          <div>
+            <header>
+              <span>{{ item.label }}</span>
+              <strong>{{ item.revenue | currency }}</strong>
+            </header>
+            <div class="bar-track">
+              <i [style.width.%]="vm.percent(item.revenue, vm.maxValue(vm.dashboardTopCustomersRevenue(), 'revenue'))"></i>
+            </div>
+            <small>{{ item.orders }} orders · {{ item.average | currency }} average</small>
+          </div>
+        } @empty {
+          <p class="empty-state">No orders yet.</p>
+        }
+      </div>
+    </article>
+
+    <article class="chart-card dashboard-chart-large">
+      <div class="chart-header">
+        <div>
+          <span>Inventory</span>
+          <strong>Stock By Location</strong>
+        </div>
+      </div>
+      <div class="dashboard-bars clear-bars">
+        @for (item of vm.dashboardLocationBreakdown(); track item.label) {
+          <div [style.--value.%]="vm.percent(item.value, vm.maxValue(vm.dashboardLocationBreakdown()))">
+            <span></span>
+            <strong>{{ item.label }}</strong>
+            <small>{{ item.value }}</small>
+          </div>
+        } @empty {
+          <p class="empty-state">No stock yet.</p>
+        }
+      </div>
+    </article>
+
+    <article class="chart-card dashboard-chart-large fulfillment-card">
+      <div class="chart-header">
+        <div>
+          <span>Warehouse</span>
+          <strong>Fulfillment Pipeline</strong>
+        </div>
+      </div>
+      <section class="fulfillment-summary">
+        <div>
+          <span>Active Workload</span>
+          <strong>{{ vm.dashboardFulfillmentTotal() }}</strong>
+        </div>
+        <div>
+          <span>Bottleneck</span>
+          <strong>{{ vm.dashboardFulfillmentBottleneck().label }}</strong>
+          <small>{{ vm.dashboardFulfillmentBottleneck().value }} {{ vm.dashboardFulfillmentBottleneck().detail }}</small>
+        </div>
+      </section>
+      <div class="fulfillment-chart">
+        @for (item of vm.dashboardFulfillmentQueue(); track item.label) {
+          <div class="fulfillment-stage">
+            <div class="fulfillment-column">
+              <i [style.height.%]="vm.percent(item.value, vm.maxValue(vm.dashboardFulfillmentQueue()))"></i>
+            </div>
+            <strong>{{ item.value }}</strong>
+            <span>{{ item.label }}</span>
+            <small>{{ item.detail }}</small>
+          </div>
+        }
+      </div>
+    </article>
+
+    <article class="chart-card dashboard-chart-large revenue-overview">
+      <div class="chart-header">
+        <div>
+          <span>Invoices</span>
+          <strong>Receivables By Status</strong>
+        </div>
+      </div>
+      <section class="revenue-metrics">
+        @for (item of vm.dashboardRevenueMetrics(); track item.label) {
           <div>
             <span>{{ item.label }}</span>
             <strong>{{ item.value }}</strong>
           </div>
         }
-      </div>
-    </div>
-  </article>
-
-  <article class="chart-card revenue-card">
-    <div class="chart-header">
-      <div>
-        <span>Revenue</span>
-        <strong>{{ vm.stats?.revenue ?? 0 | currency }}</strong>
-      </div>
-      <p>{{ vm.stats?.invoicePending ?? 0 }} pending</p>
-    </div>
-    <div class="revenue-bars" aria-label="Revenue chart">
-      <div style="--value: 42"><span></span><strong>Orders</strong></div>
-      <div style="--value: 68"><span></span><strong>Paid</strong></div>
-      <div style="--value: 52"><span></span><strong>Open</strong></div>
-      <div style="--value: 86"><span></span><strong>Due</strong></div>
-      <div style="--value: 64"><span></span><strong>Net</strong></div>
-    </div>
-    <div class="mini-metrics">
-      <div>
-        <span>Invoices</span>
-        <strong>{{ vm.invoices.length }}</strong>
-      </div>
-      <div>
-        <span>Completed</span>
-        <strong>{{ vm.completedInvoicesCount() }}</strong>
-      </div>
-    </div>
-  </article>
-
-  <article class="chart-card wide-chart">
-    <div class="chart-header">
-      <div>
-        <span>Operations</span>
-        <strong>Resources</strong>
-      </div>
-    </div>
-    <div class="bar-list">
-      @for (item of vm.resourceBreakdown(); track item.label) {
-        <div class="bar-row">
-          <div>
-            <span>{{ item.label }}</span>
-            <strong>{{ item.value }}</strong>
+      </section>
+      <div class="bar-list">
+        @for (item of vm.dashboardInvoiceValueBreakdown(); track item.label) {
+          <div class="bar-row">
+            <div>
+              <span>{{ item.label }}</span>
+              <strong>{{ item.value | currency }}</strong>
+            </div>
+            <div class="bar-track">
+              <i [style.width.%]="vm.percent(item.value, vm.maxValue(vm.dashboardInvoiceValueBreakdown()))"></i>
+            </div>
           </div>
-          <div class="bar-track">
-            <i [style.width.%]="vm.percent(item.value, vm.maxValue(vm.resourceBreakdown()))"></i>
-          </div>
-        </div>
-      }
-    </div>
-  </article>
-
-  <article class="chart-card wide-chart">
-    <div class="chart-header">
-      <div>
-        <span>Queues</span>
-        <strong>Workload</strong>
+        }
       </div>
-    </div>
-    <div class="bar-list">
-      @for (item of vm.queueBreakdown(); track item.label) {
-        <div class="bar-row">
-          <div>
-            <span>{{ item.label }}</span>
-            <strong>{{ item.value }}</strong>
-          </div>
-          <div class="bar-track muted-track">
-            <i [style.width.%]="vm.percent(item.value, vm.maxValue(vm.queueBreakdown()))"></i>
-          </div>
-        </div>
-      }
-    </div>
-  </article>
-
-  <article class="chart-card recent-card">
-    <div class="chart-header">
-      <div>
-        <span>Recent</span>
-        <strong>Orders</strong>
-      </div>
-    </div>
-    <div class="recent-list">
-      @for (order of vm.recentOrders(); track order.id) {
-        <div>
-          <span>{{ order.orderNumber }}</span>
-          <strong>{{ order.totalAmount | currency }}</strong>
-          <p>{{ vm.orderStatusLabel(order.status) }}</p>
-        </div>
-      } @empty {
-        <p class="empty-state">No orders yet.</p>
-      }
-    </div>
-  </article>
+    </article>
+  </section>
 </section>
