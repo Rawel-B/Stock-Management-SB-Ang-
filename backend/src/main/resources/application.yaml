@@ -1,6 +1,8 @@
 spring:
   application:
     name: backend
+  mongodb:
+    uri: ${SPRING_MONGODB_URI:mongodb://localhost:27017/dsm}
 
 app:
   jwt:

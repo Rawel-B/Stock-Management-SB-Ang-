@@ -64,6 +64,8 @@ public class ResponseDTO {
         private String locationId;
         private String location;
         private Integer quantity;
+        private Integer reservedQuantity;
+        private Integer availableQuantity;
         private LocalDateTime lastReceiptDate;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;

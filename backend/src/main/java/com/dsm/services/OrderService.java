@@ -1,5 +1,16 @@
 package com.dsm.services;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.dsm.dto.request.RequestDTO.OrderRequest;
 import com.dsm.dto.request.RequestDTO.ProductRequest;
 import com.dsm.dto.response.ResponseDTO.CustomerResponse;
@@ -9,19 +20,23 @@ import com.dsm.dto.response.ResponseDTO.OrderSummaryResponse;
 import com.dsm.dto.response.ResponseDTO.ProductResponse;
 import com.dsm.dto.response.ResponseDTO.ShippingResponse;
 import com.dsm.dto.response.ResponseDTO.SupplierResponse;
-import com.dsm.entities.*;
-import com.dsm.exception.*;
-import com.dsm.repositories.*;
+import com.dsm.entities.Customer;
+import com.dsm.entities.Invoice;
+import com.dsm.entities.Order;
+import com.dsm.entities.Product;
+import com.dsm.entities.Shipping;
+import com.dsm.entities.Stock;
+import com.dsm.entities.Supplier;
+import com.dsm.exception.BusinessException;
+import com.dsm.exception.ResourceNotFoundException;
+import com.dsm.repositories.InvoiceRepository;
+import com.dsm.repositories.OrderRepository;
+import com.dsm.repositories.ProductRepository;
+import com.dsm.repositories.ShippingRepository;
+import com.dsm.repositories.StockRepository;
+import com.dsm.repositories.SupplierRepository;
+
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -38,7 +53,7 @@ public class OrderService {
     public OrderResponse addOrder(OrderRequest request) {
         Customer customer = customerService.findById(request.getCustomerId());
         Supplier supplier = findUsableSupplier(request.getSupplierId());
-        validateProductsFromStock(request.getProducts());
+        validateProductsFromStock(request.getProducts(), null);
         Order order = Order.builder()
                 .customerId(customer.getId())
                 .supplierId(supplier != null ? supplier.getId() : null)
@@ -139,7 +154,7 @@ public class OrderService {
 
         Customer customer = customerService.findById(request.getCustomerId());
         Supplier supplier = findUsableSupplier(request.getSupplierId());
-        validateProductsFromStock(request.getProducts());
+        validateProductsFromStock(request.getProducts(), id);
         order.setCustomerId(customer.getId());
         order.setSupplierId(supplier != null ? supplier.getId() : null);
         order.setRemark(request.getRemark());
@@ -203,20 +218,19 @@ public class OrderService {
         }
         return supplier;
     }
-    private void validateProductsFromStock(List<ProductRequest> products) {
+    private void validateProductsFromStock(List<ProductRequest> products, String ignoredOrderId) {
         if (products == null || products.isEmpty()) {
             throw new BusinessException("At Least One Product Must Be Added.");
         }
         List<Stock> stocks = stockRepository.findAll();
         Map<String, Integer> available = stocks.stream()
                 .filter(stock -> stock.getProduct() != null && !stock.getProduct().isBlank())
-                .collect(Collectors.groupingBy(stock -> stock.getProduct().trim().toLowerCase(), Collectors.summingInt(stock -> stock.getQuantity() != null ? stock.getQuantity() : 0)));
-        Map<String, Integer> requested = products.stream()
-                .filter(product -> product.getProduct() != null && !product.getProduct().isBlank())
-                .collect(Collectors.groupingBy(product -> product.getProduct().trim().toLowerCase(), Collectors.summingInt(product -> product.getQuantity() != null ? product.getQuantity() : 0)));
+                .collect(Collectors.groupingBy(stock -> productKey(stock.getProduct()), Collectors.summingInt(stock -> stock.getQuantity() != null ? stock.getQuantity() : 0)));
+        Map<String, Integer> reserved = reservedProducts(ignoredOrderId);
+        Map<String, Integer> requested = groupProductRequests(products);
 
         for (Map.Entry<String, Integer> product : requested.entrySet()) {
-            int quantity = available.getOrDefault(product.getKey(), 0);
+            int quantity = available.getOrDefault(product.getKey(), 0) - reserved.getOrDefault(product.getKey(), 0);
             if (quantity <= 0) {
                 throw new BusinessException("Product Must Exist In Stock.");
             }
@@ -224,6 +238,25 @@ public class OrderService {
                 throw new BusinessException("Requested Quantity Exceeds Available Stock.");
             }
         }
+    }
+    private Map<String, Integer> reservedProducts(String ignoredOrderId) {
+        return orderRepository.findAll().stream()
+                .filter(order -> ignoredOrderId == null || !order.getId().equals(ignoredOrderId))
+                .filter(this::reservesStock)
+                .flatMap(order -> productRepository.getProductsByOrderId(order.getId()).stream())
+                .filter(product -> product.getProduct() != null && !product.getProduct().isBlank())
+                .collect(Collectors.groupingBy(product -> productKey(product.getProduct()), Collectors.summingInt(product -> product.getQuantity() != null ? product.getQuantity() : 0)));
+    }
+    private boolean reservesStock(Order order) {
+        return order.getStatus() == Order.OrderStatus.pendingApproval || order.getStatus() == Order.OrderStatus.validated || order.getStatus() == Order.OrderStatus.ongoing;
+    }
+    private Map<String, Integer> groupProductRequests(List<ProductRequest> products) {
+        return products.stream()
+                .filter(product -> product.getProduct() != null && !product.getProduct().isBlank())
+                .collect(Collectors.groupingBy(product -> productKey(product.getProduct()), Collectors.summingInt(product -> product.getQuantity() != null ? product.getQuantity() : 0)));
+    }
+    private String productKey(String product) {
+        return product != null ? product.trim().toLowerCase() : "";
     }
     private OrderResponse toResponse(Order order) {
         List<Product> orderProducts = productRepository.getProductsByOrderId(order.getId());
@@ -233,7 +266,6 @@ public class OrderService {
         Supplier supplier = findSupplier(order.getSupplierId());
         CustomerResponse customerResponse = null;
         SupplierResponse supplierResponse = null;
-
         List<ProductResponse> products = orderProducts.stream().map(l -> ProductResponse.builder()
                 .id(l.getId()).product(l.getProduct())
                 .productRef(l.getProductRef())

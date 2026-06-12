@@ -57,6 +57,8 @@ export interface StockRequest {
 export interface StockResponse extends StockRequest {
   id: string;
   location?: string;
+  reservedQuantity: number;
+  availableQuantity: number;
   lastReceiptDate?: string;
   createdAt: string;
   updatedAt?: string;

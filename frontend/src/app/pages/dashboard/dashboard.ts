@@ -1418,7 +1418,7 @@ export class Dashboard implements OnInit, OnDestroy {
   }
 
   stockProductOptions() {
-    const products = new Map<string, { product: string; productRef?: string; quantity: number; refs: Set<string> }>();
+    const products = new Map<string, { product: string; productRef?: string; quantity: number; reservedQuantity: number; availableQuantity: number; refs: Set<string> }>();
 
     this.stocks.forEach(stock => {
       const productName = stock.product?.trim();
@@ -1426,8 +1426,10 @@ export class Dashboard implements OnInit, OnDestroy {
         return;
       }
       const key = productName.toLowerCase();
-      const current = products.get(key) ?? { product: productName, productRef: stock.productRef, quantity: 0, refs: new Set<string>() };
+      const current = products.get(key) ?? { product: productName, productRef: stock.productRef, quantity: 0, reservedQuantity: 0, availableQuantity: 0, refs: new Set<string>() };
       current.quantity += Number(stock.quantity ?? 0);
+      current.reservedQuantity = Math.max(current.reservedQuantity, Number(stock.reservedQuantity ?? 0));
+      current.availableQuantity = Math.max(current.availableQuantity, Number(stock.availableQuantity ?? 0));
       if (stock.productRef) {
         current.refs.add(stock.productRef);
       }
@@ -1438,10 +1440,18 @@ export class Dashboard implements OnInit, OnDestroy {
       .map(product => ({
         product: product.product,
         productRef: product.refs.size === 1 ? [...product.refs][0] : product.productRef,
-        quantity: product.quantity
+        quantity: this.availableOrderQuantity(product)
       }))
       .filter(product => product.quantity > 0)
       .sort((first, second) => first.product.localeCompare(second.product));
+  }
+
+  availableOrderQuantity(product: { product: string; quantity: number; reservedQuantity: number; availableQuantity: number }) {
+    const availableQuantity = product.availableQuantity || Math.max(product.quantity - product.reservedQuantity, 0);
+    if (!this.orderEditId) {
+      return availableQuantity;
+    }
+    return availableQuantity + this.orderProductQuantity(product.product);
   }
 
   selectOrderProduct(productName: string) {

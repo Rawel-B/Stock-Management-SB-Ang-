@@ -77,17 +77,17 @@ public class ShippingService {
     public ShippingResponse updateShippingStatus(String id, Shipping.ShippingStatus status) {
         Shipping shipping = findShippingById(id);
         validateStatusChange(shipping.getStatus(), status);
-        boolean shouldReceiveStock = shipping.getStatus() != Shipping.ShippingStatus.delivered && status == Shipping.ShippingStatus.delivered;
+        boolean shouldDeductStock = shipping.getStatus() != Shipping.ShippingStatus.delivered && status == Shipping.ShippingStatus.delivered;
         shipping.setStatus(status);
 
         if (status == Shipping.ShippingStatus.delivered) {
-            shipping.setReceiptDate(LocalDateTime.now());
             Order order = orderService.findById(shipping.getOrderId());
+            if (shouldDeductStock) {
+                stockService.deductOrder(order);
+            }
+            shipping.setReceiptDate(LocalDateTime.now());
             order.setStatus(Order.OrderStatus.delivered);
             orderRepository.save(order);
-            if (shouldReceiveStock) {
-                stockService.receiveOrder(order);
-            }
         }
 
         return toResponse(shippingRepository.save(shipping));

@@ -68,6 +68,10 @@
             <div><span>Reference</span><strong>{{ stock.productRef || 'No reference' }}</strong></div>
             <div><span>Location</span><strong>{{ stock.location || 'No location assigned' }}</strong></div>
             <div><span>Quantity</span><strong>{{ stock.quantity }}</strong></div>
+            <div><span>Available</span><strong>{{ stock.availableQuantity }}</strong></div>
+            @if (stock.reservedQuantity > 0) {
+              <div><span>Reserved</span><strong>{{ stock.reservedQuantity }}</strong></div>
+            }
           </section>
         }
       </div>
